@@ -1,16 +1,32 @@
 import { useState } from 'react'
+import { Layout } from './components/Layout'
+import { Dashboard } from './pages/Dashboard'
+import { Profiles } from './pages/Profiles'
+import { Logs } from './pages/Logs'
+import { Settings } from './pages/Settings'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [activeTab, setActiveTab] = useState('dashboard')
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return <Dashboard />
+      case 'profiles':
+        return <Profiles />
+      case 'logs':
+        return <Logs />
+      case 'settings':
+        return <Settings />
+      default:
+        return <Dashboard />
+    }
+  }
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>Claude Code Proxy Hub</h1>
-      <p>Welcome to Claude Code Proxy Hub!</p>
-      <button onClick={() => setCount((count) => count + 1)}>
-        count is {count}
-      </button>
-    </div>
+    <Layout activeTab={activeTab} onTabChange={setActiveTab}>
+      {renderContent()}
+    </Layout>
   )
 }
 
