@@ -11,7 +11,6 @@ interface Profile {
   name: string
   apiBaseUrl: string
   apiKey: string
-  modelId: string
   isActive: boolean
   modelMappingMode: ModelMappingMode
   overrideModel?: string
@@ -123,7 +122,7 @@ export function Profiles() {
                 API 地址
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                模型
+                模型映射模式
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 状态
@@ -150,7 +149,9 @@ export function Profiles() {
                   {profile.apiBaseUrl}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                  {profile.modelId}
+                  {profile.modelMappingMode === "passthrough" && "透传"}
+                  {profile.modelMappingMode === "override" && "覆盖"}
+                  {profile.modelMappingMode === "map" && "映射"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <button

@@ -21,8 +21,8 @@ export function TabNavigation({ tabs, activeTab, onTabChange }: TabNavigationPro
           className={cn(
             "px-6 py-2 rounded-full text-sm font-medium transition-all",
             activeTab === tab.id
-              ? "bg-gray-900 text-white"
-              : "bg-transparent text-gray-600 hover:bg-gray-100"
+              ? "bg-gray-900 dark:bg-gray-600 text-white"
+              : "bg-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
           )}
         >
           {tab.label}

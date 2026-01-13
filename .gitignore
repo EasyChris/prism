@@ -23,3 +23,10 @@ npm-debug.log*
 # Environment
 .env
 .env.local
+
+
+.claude/
+test/
+todo/
+dist/
+node_modules/

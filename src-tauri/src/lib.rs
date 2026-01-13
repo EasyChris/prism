@@ -46,7 +46,6 @@ pub fn run() {
           "Default".to_string(),
           "https://api.anthropic.com".to_string(),
           "".to_string(),
-          "claude-3-5-sonnet-20241022".to_string(),
         );
 
         if let Ok(profile_id) = manager.create_profile(default_profile) {
@@ -85,6 +84,12 @@ pub fn run() {
       commands::delete_profile,
       commands::activate_profile,
       commands::get_logs,
+      commands::get_dashboard_stats,
+      commands::get_token_stats,
+      commands::get_proxy_api_key,
+      commands::refresh_proxy_api_key,
+      commands::get_auth_enabled,
+      commands::set_auth_enabled,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

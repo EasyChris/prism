@@ -48,3 +48,9 @@ lazy_static = "1.4"
 # SQLite 数据库
 rusqlite = { version = "0.32", features = ["bundled"] }
 dirs = "5.0"
+
+# 时间处理
+chrono = "0.4"
+
+# 随机数生成
+rand = "0.8"

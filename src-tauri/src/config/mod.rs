@@ -36,8 +36,6 @@ pub struct Profile {
     pub api_base_url: String,
     /// API Key (加密存储)
     pub api_key: String,
-    /// Model ID
-    pub model_id: String,
     /// 是否激活
     pub is_active: bool,
 
@@ -53,13 +51,12 @@ pub struct Profile {
 }
 
 impl Profile {
-    pub fn new(name: String, api_base_url: String, api_key: String, model_id: String) -> Self {
+    pub fn new(name: String, api_base_url: String, api_key: String) -> Self {
         Self {
             id: uuid::Uuid::new_v4().to_string(),
             name,
             api_base_url,
             api_key,
-            model_id,
             is_active: false,
             model_mapping_mode: ModelMappingMode::Passthrough,
             override_model: None,
@@ -96,12 +93,66 @@ impl Profile {
 pub struct ConfigManager {
     /// 所有配置档案
     profiles: HashMap<String, Profile>,
+    /// 代理服务 API Key
+    #[serde(default)]
+    pub proxy_api_key: Option<String>,
+    /// 是否启用访问授权
+    #[serde(default)]
+    pub enable_auth: bool,
 }
 
 impl ConfigManager {
     pub fn new() -> Self {
         Self {
             profiles: HashMap::new(),
+            proxy_api_key: None,
+            enable_auth: false,
+        }
+    }
+
+    /// 生成新的 API Key (格式: sk-{32位十六进制})
+    pub fn generate_api_key() -> String {
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+        let random_bytes: Vec<u8> = (0..16).map(|_| rng.gen()).collect();
+        let hex_string: String = random_bytes
+            .iter()
+            .map(|b| format!("{:02x}", b))
+            .collect();
+        format!("sk-{}", hex_string)
+    }
+
+    /// 刷新 API Key
+    pub fn refresh_api_key(&mut self) -> String {
+        let new_key = Self::generate_api_key();
+        self.proxy_api_key = Some(new_key.clone());
+        new_key
+    }
+
+    /// 获取当前 API Key
+    pub fn get_api_key(&self) -> Option<&String> {
+        self.proxy_api_key.as_ref()
+    }
+
+    /// 设置访问授权开关
+    pub fn set_auth_enabled(&mut self, enabled: bool) {
+        self.enable_auth = enabled;
+    }
+
+    /// 检查是否启用访问授权
+    pub fn is_auth_enabled(&self) -> bool {
+        self.enable_auth
+    }
+
+    /// 验证 API Key
+    pub fn verify_api_key(&self, key: &str) -> bool {
+        if !self.enable_auth {
+            return true; // 未启用授权时，所有请求都通过
+        }
+
+        match &self.proxy_api_key {
+            Some(stored_key) => stored_key == key,
+            None => false,
         }
     }
 

@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@theme {
+  /* 启用暗色模式支持 */
+  --color-scheme: light dark;
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;

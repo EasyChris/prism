@@ -4,7 +4,7 @@ use crate::config::{ConfigManager, ModelMappingMode, Profile};
 use crate::logger::RequestLog;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
-use tauri::{Manager, State};
+use tauri::State;
 
 pub type SharedConfigManager = Arc<RwLock<ConfigManager>>;
 
@@ -15,7 +15,6 @@ pub struct ProfileDto {
     pub name: String,
     pub api_base_url: String,
     pub api_key: String,
-    pub model_id: String,
     pub is_active: bool,
     pub model_mapping_mode: ModelMappingMode,
     pub override_model: Option<String>,
@@ -29,7 +28,6 @@ impl From<&Profile> for ProfileDto {
             name: profile.name.clone(),
             api_base_url: profile.api_base_url.clone(),
             api_key: profile.api_key.clone(),
-            model_id: profile.model_id.clone(),
             is_active: profile.is_active,
             model_mapping_mode: profile.model_mapping_mode.clone(),
             override_model: profile.override_model.clone(),
@@ -62,7 +60,6 @@ pub struct CreateProfileDto {
     pub name: String,
     pub api_base_url: String,
     pub api_key: String,
-    pub model_id: String,
     pub model_mapping_mode: ModelMappingMode,
     pub override_model: Option<String>,
     pub model_mappings: HashMap<String, String>,
@@ -79,7 +76,6 @@ pub fn create_profile(
         profile.name,
         profile.api_base_url,
         profile.api_key,
-        profile.model_id,
     );
 
     // 设置模型映射相关字段
@@ -114,7 +110,6 @@ pub fn update_profile(
         name: profile.name,
         api_base_url: profile.api_base_url,
         api_key: profile.api_key,
-        model_id: profile.model_id,
         is_active: existing_profile.is_active,
         model_mapping_mode: profile.model_mapping_mode,
         override_model: profile.override_model,
@@ -164,34 +159,46 @@ pub fn activate_profile(config: State<SharedConfigManager>, id: String) -> Resul
 #[serde(rename_all = "camelCase")]
 pub struct RequestLogDto {
     pub id: Option<i64>,
+    pub request_id: String,
     pub timestamp: i64,
     pub profile_id: String,
     pub profile_name: String,
-    pub model: String,
     pub provider: String,
+    pub original_model: String,
+    pub model_mode: String,
+    pub forwarded_model: String,
     pub input_tokens: i32,
     pub output_tokens: i32,
     pub duration_ms: i64,
+    pub upstream_duration_ms: Option<i64>,
     pub status_code: i32,
     pub error_message: Option<String>,
     pub is_stream: bool,
+    pub request_size_bytes: Option<i64>,
+    pub response_size_bytes: Option<i64>,
 }
 
 impl From<RequestLog> for RequestLogDto {
     fn from(log: RequestLog) -> Self {
         RequestLogDto {
             id: None,
+            request_id: log.request_id,
             timestamp: log.timestamp,
             profile_id: log.profile_id,
             profile_name: log.profile_name,
-            model: log.model,
             provider: log.provider,
+            original_model: log.original_model,
+            model_mode: log.model_mode,
+            forwarded_model: log.forwarded_model,
             input_tokens: log.input_tokens,
             output_tokens: log.output_tokens,
             duration_ms: log.duration_ms,
+            upstream_duration_ms: log.upstream_duration_ms,
             status_code: log.status_code,
             error_message: log.error_message,
             is_stream: log.is_stream,
+            request_size_bytes: log.request_size_bytes,
+            response_size_bytes: log.response_size_bytes,
         }
     }
 }
@@ -208,4 +215,89 @@ pub async fn get_logs(
     let logs = crate::logger::get_logs(limit, offset).await;
 
     Ok(logs.into_iter().map(RequestLogDto::from).collect())
+}
+
+// 统计数据相关命令
+
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct DashboardStatsDto {
+    pub today_requests: i32,
+    pub today_tokens: i32,
+    pub total_requests: i32,
+    pub total_tokens: i32,
+}
+
+#[tauri::command]
+pub async fn get_dashboard_stats() -> Result<DashboardStatsDto, String> {
+    let stats = crate::db::get_dashboard_stats().await?;
+
+    Ok(DashboardStatsDto {
+        today_requests: stats.today_requests,
+        today_tokens: stats.today_tokens,
+        total_requests: stats.total_requests,
+        total_tokens: stats.total_tokens,
+    })
+}
+
+// Token 统计数据相关命令
+
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenDataPointDto {
+    pub label: String,
+    pub tokens: i32,
+}
+
+#[tauri::command]
+pub async fn get_token_stats(time_range: String) -> Result<Vec<TokenDataPointDto>, String> {
+    let data_points = crate::db::get_token_stats(&time_range).await?;
+
+    Ok(data_points
+        .into_iter()
+        .map(|dp| TokenDataPointDto {
+            label: dp.label,
+            tokens: dp.tokens,
+        })
+        .collect())
+}
+
+// API Key 管理相关命令
+
+#[tauri::command]
+pub fn get_proxy_api_key(config: State<SharedConfigManager>) -> Result<Option<String>, String> {
+    let manager = config.read().map_err(|e| e.to_string())?;
+    Ok(manager.get_api_key().cloned())
+}
+
+#[tauri::command]
+pub fn refresh_proxy_api_key(config: State<SharedConfigManager>) -> Result<String, String> {
+    let mut manager = config.write().map_err(|e| e.to_string())?;
+    let new_key = manager.refresh_api_key();
+
+    // 保存到文件
+    let config_path = crate::config::get_config_path();
+    manager.save_to_file(&config_path).map_err(|e| e.to_string())?;
+
+    log::info!("Proxy API key refreshed");
+    Ok(new_key)
+}
+
+#[tauri::command]
+pub fn get_auth_enabled(config: State<SharedConfigManager>) -> Result<bool, String> {
+    let manager = config.read().map_err(|e| e.to_string())?;
+    Ok(manager.is_auth_enabled())
+}
+
+#[tauri::command]
+pub fn set_auth_enabled(config: State<SharedConfigManager>, enabled: bool) -> Result<(), String> {
+    let mut manager = config.write().map_err(|e| e.to_string())?;
+    manager.set_auth_enabled(enabled);
+
+    // 保存到文件
+    let config_path = crate::config::get_config_path();
+    manager.save_to_file(&config_path).map_err(|e| e.to_string())?;
+
+    log::info!("Auth enabled set to: {}", enabled);
+    Ok(())
 }

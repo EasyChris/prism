@@ -7,7 +7,6 @@ interface Profile {
   name: string
   apiBaseUrl: string
   apiKey: string
-  modelId: string
   modelMappingMode: ModelMappingMode
   overrideModel?: string
   modelMappings: Record<string, string>
@@ -24,7 +23,6 @@ export function ProfileForm({ profile, onSubmit, onCancel }: ProfileFormProps) {
     name: profile?.name || "",
     apiBaseUrl: profile?.apiBaseUrl || "https://api.anthropic.com",
     apiKey: profile?.apiKey || "",
-    modelId: profile?.modelId || "claude-3-5-sonnet-20241022",
     modelMappingMode: profile?.modelMappingMode || "passthrough" as ModelMappingMode,
     overrideModel: profile?.overrideModel || "",
     modelMappings: profile?.modelMappings || {},
@@ -110,20 +108,6 @@ export function ProfileForm({ profile, onSubmit, onCancel }: ProfileFormProps) {
           onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="sk-ant-..."
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Model ID *
-        </label>
-        <input
-          type="text"
-          required
-          value={formData.modelId}
-          onChange={(e) => setFormData({ ...formData, modelId: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="claude-3-5-sonnet-20241022"
         />
       </div>
 

@@ -9,7 +9,6 @@ export interface Profile {
   name: string
   apiBaseUrl: string
   apiKey: string
-  modelId: string
   isActive: boolean
   modelMappingMode: ModelMappingMode
   overrideModel?: string
@@ -101,17 +100,23 @@ export async function getActiveProfile(): Promise<Profile | null> {
 // 日志相关接口
 export interface RequestLog {
   id?: number
+  requestId: string
   timestamp: number
   profileId: string
   profileName: string
-  model: string
   provider: string
+  originalModel: string
+  modelMode: string
+  forwardedModel: string
   inputTokens: number
   outputTokens: number
   durationMs: number
+  upstreamDurationMs?: number
   statusCode: number
   errorMessage?: string
   isStream: boolean
+  requestSizeBytes?: number
+  responseSizeBytes?: number
 }
 
 // 获取日志列表
@@ -123,6 +128,100 @@ export async function getLogs(limit?: number, offset?: number): Promise<RequestL
     return result
   } catch (error) {
     console.error("[API] get_logs error:", error)
+    throw error
+  }
+}
+
+// 统计数据接口
+export interface DashboardStats {
+  todayRequests: number
+  todayTokens: number
+  totalRequests: number
+  totalTokens: number
+}
+
+// 获取仪表盘统计数据
+export async function getDashboardStats(): Promise<DashboardStats> {
+  console.log("[API] Calling get_dashboard_stats...")
+  try {
+    const result = await invoke<DashboardStats>("get_dashboard_stats")
+    console.log("[API] get_dashboard_stats result:", result)
+    return result
+  } catch (error) {
+    console.error("[API] get_dashboard_stats error:", error)
+    throw error
+  }
+}
+
+// Token 统计数据接口
+export interface TokenDataPoint {
+  label: string
+  tokens: number
+}
+
+export type TimeRange = 'hour' | 'day' | 'week' | 'month'
+
+// 获取 Token 使用量统计数据
+export async function getTokenStats(timeRange: TimeRange): Promise<TokenDataPoint[]> {
+  console.log("[API] Calling get_token_stats...", { timeRange })
+  try {
+    const result = await invoke<TokenDataPoint[]>("get_token_stats", { timeRange })
+    console.log("[API] get_token_stats result:", result)
+    return result
+  } catch (error) {
+    console.error("[API] get_token_stats error:", error)
+    throw error
+  }
+}
+
+// API Key 管理相关接口
+
+// 获取代理服务 API Key
+export async function getProxyApiKey(): Promise<string | null> {
+  console.log("[API] Calling get_proxy_api_key...")
+  try {
+    const result = await invoke<string | null>("get_proxy_api_key")
+    console.log("[API] get_proxy_api_key result:", result)
+    return result
+  } catch (error) {
+    console.error("[API] get_proxy_api_key error:", error)
+    throw error
+  }
+}
+// 刷新代理服务 API Key
+export async function refreshProxyApiKey(): Promise<string> {
+  console.log("[API] Calling refresh_proxy_api_key...")
+  try {
+    const result = await invoke<string>("refresh_proxy_api_key")
+    console.log("[API] refresh_proxy_api_key result:", result)
+    return result
+  } catch (error) {
+    console.error("[API] refresh_proxy_api_key error:", error)
+    throw error
+  }
+}
+
+// 获取访问授权开关状态
+export async function getAuthEnabled(): Promise<boolean> {
+  console.log("[API] Calling get_auth_enabled...")
+  try {
+    const result = await invoke<boolean>("get_auth_enabled")
+    console.log("[API] get_auth_enabled result:", result)
+    return result
+  } catch (error) {
+    console.error("[API] get_auth_enabled error:", error)
+    throw error
+  }
+}
+
+// 设置访问授权开关
+export async function setAuthEnabled(enabled: boolean): Promise<void> {
+  console.log("[API] Calling set_auth_enabled...", { enabled })
+  try {
+    await invoke("set_auth_enabled", { enabled })
+    console.log("[API] set_auth_enabled success")
+  } catch (error) {
+    console.error("[API] set_auth_enabled error:", error)
     throw error
   }
 }
