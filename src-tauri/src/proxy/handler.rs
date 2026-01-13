@@ -113,7 +113,7 @@ pub(super) async fn handle_messages(
     log::info!("Forwarding to: {}", upstream_url);
 
     // 创建 HTTP 客户端（设置 60 秒超时）
-    // reqwest 默认已启用 gzip/brotli/deflate 自动解压
+    // reqwest 默认启用所有解压功能（gzip, deflate, br, zstd）
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(60))
         .connect_timeout(std::time::Duration::from_secs(10))
@@ -233,13 +233,28 @@ pub(super) async fn handle_messages(
 
     // 非流式响应，直接返回
     log::info!("Reading response body...");
-    let response_body = response.text().await.map_err(|e| {
-        log::error!("Failed to read response body: {}", e);
+
+    // 先读取为字节，以便处理可能的编码问题
+    let response_bytes = response.bytes().await.map_err(|e| {
+        log::error!("Failed to read response bytes: {}", e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    log::info!("Response body length: {} bytes", response_body.len());
+    log::info!("Response body length: {} bytes", response_bytes.len());
     log::info!("Received response with status: {}", status);
+
+    // 尝试将字节转换为 UTF-8 字符串
+    let response_body = match String::from_utf8(response_bytes.to_vec()) {
+        Ok(text) => {
+            log::info!("Successfully decoded response as UTF-8");
+            text
+        }
+        Err(e) => {
+            log::warn!("Response is not valid UTF-8, attempting lossy conversion: {}", e);
+            // 使用 lossy 转换，替换无效字符
+            String::from_utf8_lossy(&response_bytes).to_string()
+        }
+    };
 
     // 打印响应体前 500 字符用于调试（安全地处理 UTF-8 边界）
     let preview = if response_body.len() > 500 {
@@ -254,21 +269,38 @@ pub(super) async fn handle_messages(
     };
     log::info!("Response body preview: {}", preview);
 
-    // 解析 Token 信息
+    // 解析 Token 信息（兼容不同供应商的响应格式）
     let (input_tokens, output_tokens) = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&response_body) {
         log::info!("Successfully parsed JSON response");
+
+        // 尝试多种可能的 token 字段路径（兼容不同供应商）
         let input = json.get("usage")
             .and_then(|u| u.get("input_tokens"))
             .and_then(|t| t.as_i64())
+            .or_else(|| {
+                // 尝试其他可能的字段名
+                json.get("usage")
+                    .and_then(|u| u.get("prompt_tokens"))
+                    .and_then(|t| t.as_i64())
+            })
             .unwrap_or(0) as i32;
+
         let output = json.get("usage")
             .and_then(|u| u.get("output_tokens"))
             .and_then(|t| t.as_i64())
+            .or_else(|| {
+                // 尝试其他可能的字段名
+                json.get("usage")
+                    .and_then(|u| u.get("completion_tokens"))
+                    .and_then(|t| t.as_i64())
+            })
             .unwrap_or(0) as i32;
+
         log::info!("Parsed tokens - input: {}, output: {}", input, output);
         (input, output)
     } else {
-        log::warn!("Failed to parse response body as JSON");
+        log::warn!("Failed to parse response body as JSON, skipping token extraction");
+        log::warn!("This may be due to non-JSON response or unsupported format from provider");
         (0, 0)
     };
 

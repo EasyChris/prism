@@ -11,13 +11,13 @@ export function Settings() {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">代理服务</h3>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 监听端口
               </label>
               <input
                 type="number"
                 defaultValue={3000}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div className="flex items-center justify-between">
@@ -50,11 +50,18 @@ export function Settings() {
                 <div className="text-sm font-medium text-gray-900">主题</div>
                 <div className="text-xs text-gray-500 mt-1">选择应用主题</div>
               </div>
-              <select className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option>浅色</option>
-                <option>深色</option>
-                <option>跟随系统</option>
-              </select>
+              <div className="relative">
+                <select className="px-4 py-2.5 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[140px] appearance-none cursor-pointer">
+                  <option value="light">浅色</option>
+                  <option value="dark">深色</option>
+                  <option value="system">跟随系统</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
         </div>

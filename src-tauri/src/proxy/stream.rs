@@ -32,18 +32,24 @@ pub(super) async fn handle_stream_response(
             Ok(chunk) => {
                 buffer.extend_from_slice(&chunk);
 
-                // 尝试解析 SSE 事件提取 Token 信息
+                // 尝试解析 SSE 事件提取 Token 信息（兼容不同供应商格式）
                 if let Ok(text) = std::str::from_utf8(&chunk) {
                     for line in text.lines() {
                         if line.starts_with("data: ") {
                             let json_str = &line[6..];
                             if let Ok(json) = serde_json::from_str::<serde_json::Value>(json_str) {
-                                // 提取 usage 信息
+                                // 提取 usage 信息（兼容多种字段名）
                                 if let Some(usage) = json.get("usage") {
-                                    if let Some(input) = usage.get("input_tokens").and_then(|t| t.as_i64()) {
+                                    // 尝试 input_tokens 或 prompt_tokens
+                                    if let Some(input) = usage.get("input_tokens")
+                                        .and_then(|t| t.as_i64())
+                                        .or_else(|| usage.get("prompt_tokens").and_then(|t| t.as_i64())) {
                                         input_tokens = input as i32;
                                     }
-                                    if let Some(output) = usage.get("output_tokens").and_then(|t| t.as_i64()) {
+                                    // 尝试 output_tokens 或 completion_tokens
+                                    if let Some(output) = usage.get("output_tokens")
+                                        .and_then(|t| t.as_i64())
+                                        .or_else(|| usage.get("completion_tokens").and_then(|t| t.as_i64())) {
                                         output_tokens = output as i32;
                                     }
                                 }

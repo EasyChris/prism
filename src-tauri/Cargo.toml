@@ -31,8 +31,8 @@ tokio = { version = "1", features = ["full"] }
 tower = "0.4"
 tower-http = { version = "0.5", features = ["cors"] }
 
-# HTTP 客户端
-reqwest = { version = "0.12", features = ["json", "stream", "rustls-tls", "gzip"], default-features = false }
+# HTTP 客户端（启用所有压缩格式支持）
+reqwest = { version = "0.12", features = ["json", "stream", "rustls-tls", "gzip", "deflate", "brotli", "zstd"], default-features = false }
 
 # 异步流处理
 futures = "0.3"

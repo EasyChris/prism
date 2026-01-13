@@ -12,7 +12,7 @@ export function SetupGuideModal({ isOpen, onClose, proxyApiKey, proxyServerUrl }
 
   if (!isOpen) return null
 
-  const configPath = "~/.config/claude/config.json"
+  const configPath = "~/.claude/config.json"
 
   const configExample = `{
   "apiConfiguration": {
@@ -88,7 +88,7 @@ export function SetupGuideModal({ isOpen, onClose, proxyApiKey, proxyServerUrl }
               </div>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 ml-10">
-              💡 提示：可以使用命令 <code className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">open ~/.config/claude</code> 快速打开配置目录
+              💡 提示：可以使用命令 <code className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">open ~/.claude</code> 快速打开配置目录
             </p>
           </div>
 

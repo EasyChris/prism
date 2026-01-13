@@ -157,18 +157,18 @@ export function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* 第一行：统计数据卡片 */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 gap-3">
         {/* 总配置数卡片 */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">总配置数</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">{profileCount}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">总配置数</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{profileCount}</p>
             </div>
-            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
@@ -176,16 +176,16 @@ export function Dashboard() {
         </div>
 
         {/* 服务状态卡片 */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">服务状态</p>
-              <p className={`text-2xl font-bold ${activeProfile ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">服务状态</p>
+              <p className={`text-xl font-bold ${activeProfile ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
                 {activeProfile ? "运行中" : "未激活"}
               </p>
             </div>
-            <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${activeProfile ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-gray-700'}`}>
-              <svg className={`w-6 h-6 ${activeProfile ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${activeProfile ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-gray-700'}`}>
+              <svg className={`w-5 h-5 ${activeProfile ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
@@ -193,14 +193,14 @@ export function Dashboard() {
         </div>
 
         {/* 今日请求卡片 */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">今日请求</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">{formatNumber(stats.todayRequests)}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">今日请求</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatNumber(stats.todayRequests)}</p>
             </div>
-            <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-              <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
@@ -208,14 +208,14 @@ export function Dashboard() {
         </div>
 
         {/* 今日 Token 卡片 */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">今日 Token</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">{formatNumber(stats.todayTokens)}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">今日 Token</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatNumber(stats.todayTokens)}</p>
             </div>
-            <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-              <svg className="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
               </svg>
             </div>
@@ -224,10 +224,10 @@ export function Dashboard() {
       </div>
 
       {/* 第二行：当前配置和 API 密钥 */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3">
         {/* 当前配置卡片 */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">当前配置</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
+          <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-3">当前配置</h3>
           <ProfileSelector
             profiles={allProfiles}
             activeProfile={activeProfile}
@@ -237,45 +237,45 @@ export function Dashboard() {
         </div>
 
         {/* API 密钥卡片 */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">代理服务 API 密钥</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300">代理服务 API 密钥</h3>
             <button
               onClick={() => setIsSetupGuideOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               说明
             </button>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex-1 bg-gray-50 dark:bg-gray-700 rounded-lg px-4 py-3 font-mono text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 truncate">
+            <div className="flex-1 bg-gray-50 dark:bg-gray-700 rounded-lg px-3 py-2 font-mono text-xs text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 truncate">
               {proxyApiKey || '点击刷新生成'}
             </div>
             <button
               onClick={handleCopyApiKey}
               disabled={!proxyApiKey}
-              className="p-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:text-gray-400 dark:disabled:text-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
+              className="p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:text-gray-400 dark:disabled:text-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
               title="复制"
             >
               {copySuccess ? (
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
               )}
             </button>
             <button
               onClick={handleRefreshApiKey}
-              className="p-3 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors"
+              className="p-2 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors"
               title="刷新密钥"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </button>
@@ -284,16 +284,16 @@ export function Dashboard() {
       </div>
 
       {/* Token Usage Chart with Time Range Tabs */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Token 使用量</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Token 使用量</h3>
           {/* Tab 切换 */}
-          <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+          <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
             {(['hour', 'day', 'week', 'month'] as api.TimeRange[]).map((range) => (
               <button
                 key={range}
                 onClick={() => setTimeRange(range)}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
                   timeRange === range
                     ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
                     : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
@@ -306,30 +306,30 @@ export function Dashboard() {
         </div>
 
         {/* Simple Bar Chart */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {isLoadingTokenData ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="text-gray-500 dark:text-gray-400">加载中...</div>
+            <div className="flex items-center justify-center h-40">
+              <div className="text-gray-500 dark:text-gray-400 text-sm">加载中...</div>
             </div>
           ) : currentData.length === 0 ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="text-gray-400 dark:text-gray-500">暂无数据</div>
+            <div className="flex items-center justify-center h-40">
+              <div className="text-gray-400 dark:text-gray-500 text-sm">暂无数据</div>
             </div>
           ) : (
             <>
               {/* Bars */}
-              <div className="flex items-end justify-between h-64 gap-1">
+              <div className="flex items-end justify-between h-40 gap-1">
                 {currentData.map((data, index) => {
                   const heightPercent = (data.tokens / maxTokens) * 100
-                  const heightPx = (heightPercent / 100) * 256 // 256px = h-64
+                  const heightPx = (heightPercent / 100) * 160 // 160px = h-40
                   return (
-                    <div key={index} className="flex-1 flex items-end" style={{ height: '256px' }}>
+                    <div key={index} className="flex-1 flex items-end" style={{ height: '160px' }}>
                       <div
                         className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t hover:from-blue-600 hover:to-blue-500 transition-all cursor-pointer relative group min-h-[2px]"
                         style={{ height: `${heightPx}px` }}
                       >
                         {/* Tooltip on hover */}
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
                           {data.label}<br/>
                           {data.tokens.toLocaleString()} tokens
                         </div>
@@ -363,9 +363,9 @@ export function Dashboard() {
         </div>
 
         {/* Legend */}
-        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-500 rounded"></div>
+        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 bg-blue-500 rounded"></div>
             <span className="text-gray-600 dark:text-gray-400">Token 使用量</span>
           </div>
           <div className="text-gray-500 dark:text-gray-400">
