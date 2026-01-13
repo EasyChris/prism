@@ -30,3 +30,5 @@ test/
 todo/
 dist/
 node_modules/
+
+CLAUDE.md
