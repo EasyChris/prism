@@ -301,3 +301,10 @@ pub fn set_auth_enabled(config: State<SharedConfigManager>, enabled: bool) -> Re
     log::info!("Auth enabled set to: {}", enabled);
     Ok(())
 }
+
+#[tauri::command]
+pub fn get_proxy_server_url() -> Result<String, String> {
+    // 返回代理服务器的地址
+    // 注意：这里的地址应该与 proxy/mod.rs 中的地址保持一致
+    Ok("http://127.0.0.1:3000".to_string())
+}

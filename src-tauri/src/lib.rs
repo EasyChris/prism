@@ -90,6 +90,7 @@ pub fn run() {
       commands::refresh_proxy_api_key,
       commands::get_auth_enabled,
       commands::set_auth_enabled,
+      commands::get_proxy_server_url,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

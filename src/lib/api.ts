@@ -225,3 +225,16 @@ export async function setAuthEnabled(enabled: boolean): Promise<void> {
     throw error
   }
 }
+
+// 获取代理服务器地址
+export async function getProxyServerUrl(): Promise<string> {
+  console.log("[API] Calling get_proxy_server_url...")
+  try {
+    const result = await invoke<string>("get_proxy_server_url")
+    console.log("[API] get_proxy_server_url result:", result)
+    return result
+  } catch (error) {
+    console.error("[API] get_proxy_server_url error:", error)
+    throw error
+  }
+}

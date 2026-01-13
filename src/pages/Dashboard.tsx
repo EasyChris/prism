@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import * as api from "@/lib/api"
 import { ProfileSelector } from "@/components/ProfileSelector"
+import { SetupGuideModal } from "@/components/SetupGuideModal"
 
 export function Dashboard() {
   const [activeProfile, setActiveProfile] = useState<api.Profile | null>(null)
@@ -16,7 +17,9 @@ export function Dashboard() {
   const [tokenData, setTokenData] = useState<api.TokenDataPoint[]>([])
   const [isLoadingTokenData, setIsLoadingTokenData] = useState(false)
   const [proxyApiKey, setProxyApiKey] = useState<string | null>(null)
+  const [proxyServerUrl, setProxyServerUrl] = useState<string>("")
   const [copySuccess, setCopySuccess] = useState(false)
+  const [isSetupGuideOpen, setIsSetupGuideOpen] = useState(false)
 
   // 格式化数字显示（K/M 单位）
   const formatNumber = (num: number): string => {
@@ -53,11 +56,14 @@ export function Dashboard() {
     }
   }
 
-  // 加载 API Key
+  // 加载 API Key 和代理服务器地址
   const loadApiKeySettings = async () => {
     try {
       const apiKey = await api.getProxyApiKey()
       setProxyApiKey(apiKey)
+
+      const serverUrl = await api.getProxyServerUrl()
+      setProxyServerUrl(serverUrl)
     } catch (error) {
       console.error("Failed to load API key settings:", error)
     }
@@ -232,7 +238,18 @@ export function Dashboard() {
 
         {/* API 密钥卡片 */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">代理服务 API 密钥</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">代理服务 API 密钥</h3>
+            <button
+              onClick={() => setIsSetupGuideOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              说明
+            </button>
+          </div>
           <div className="flex items-center gap-2">
             <div className="flex-1 bg-gray-50 dark:bg-gray-700 rounded-lg px-4 py-3 font-mono text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 truncate">
               {proxyApiKey || '点击刷新生成'}
@@ -356,6 +373,14 @@ export function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Setup Guide Modal */}
+      <SetupGuideModal
+        isOpen={isSetupGuideOpen}
+        onClose={() => setIsSetupGuideOpen(false)}
+        proxyApiKey={proxyApiKey}
+        proxyServerUrl={proxyServerUrl}
+      />
     </div>
   )
 }
