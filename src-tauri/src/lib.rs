@@ -2,6 +2,7 @@ pub mod proxy;
 pub mod config;
 pub mod commands;
 pub mod logger;
+pub mod db;
 
 use std::sync::{Arc, RwLock};
 use tauri::Manager;
@@ -18,6 +19,15 @@ pub fn run() {
             .build(),
         )?;
       }
+
+      // 初始化数据库
+      tauri::async_runtime::block_on(async {
+        if let Err(e) = db::init_database().await {
+          log::error!("Failed to initialize database: {}", e);
+        } else {
+          log::info!("Database initialized successfully");
+        }
+      });
 
       // 加载配置
       let config_path = config::get_config_path();

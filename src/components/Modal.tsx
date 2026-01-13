@@ -1,5 +1,4 @@
 import { ReactNode } from "react"
-import { cn } from "@/lib/utils"
 
 interface ModalProps {
   isOpen: boolean
@@ -12,16 +11,17 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto py-8">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50"
+        className="fixed inset-0 bg-black/50"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="relative bg-white rounded-xl shadow-xl border border-gray-200 max-w-2xl w-full mx-4 my-auto max-h-[calc(100vh-4rem)] flex flex-col">
+        {/* 固定的标题栏 */}
+        <div className="flex items-center justify-between p-6 pb-4 border-b flex-shrink-0">
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
           <button
             onClick={onClose}
@@ -32,7 +32,11 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
             </svg>
           </button>
         </div>
-        {children}
+
+        {/* 可滚动的内容区域 */}
+        <div className="overflow-y-auto p-6 pt-4">
+          {children}
+        </div>
       </div>
     </div>
   )

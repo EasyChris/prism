@@ -2,6 +2,8 @@
 
 import { invoke } from "@tauri-apps/api/core"
 
+export type ModelMappingMode = "passthrough" | "override" | "map"
+
 export interface Profile {
   id: string
   name: string
@@ -9,6 +11,9 @@ export interface Profile {
   apiKey: string
   modelId: string
   isActive: boolean
+  modelMappingMode: ModelMappingMode
+  overrideModel?: string
+  modelMappings: Record<string, string>
 }
 
 // 获取所有配置
@@ -25,20 +30,10 @@ export async function getAllProfiles(): Promise<Profile[]> {
 }
 
 // 创建配置
-export async function createProfile(
-  name: string,
-  apiBaseUrl: string,
-  apiKey: string,
-  modelId: string
-): Promise<string> {
-  console.log("[API] Calling create_profile...", { name, apiBaseUrl, modelId })
+export async function createProfile(profile: Omit<Profile, "id" | "isActive">): Promise<string> {
+  console.log("[API] Calling create_profile...", profile)
   try {
-    const result = await invoke<string>("create_profile", {
-      name,
-      apiBaseUrl,
-      apiKey,
-      modelId,
-    })
+    const result = await invoke<string>("create_profile", { profile })
     console.log("[API] create_profile result:", result)
     return result
   } catch (error) {
@@ -48,22 +43,16 @@ export async function createProfile(
 }
 
 // 更新配置
-export async function updateProfile(
-  id: string,
-  name: string,
-  apiBaseUrl: string,
-  apiKey: string,
-  modelId: string
-): Promise<void> {
-  console.log("[API] Calling update_profile...", { id, name, apiBaseUrl, modelId })
+export async function updateProfile(id: string, profile: Omit<Profile, "id" | "isActive">): Promise<void> {
+  console.log("[API] Calling update_profile...", { id, profile })
   try {
-    await invoke("update_profile", {
+    // 将 id 和 isActive 合并到 profile 对象中
+    const fullProfile = {
+      ...profile,
       id,
-      name,
-      apiBaseUrl,
-      apiKey,
-      modelId,
-    })
+      isActive: false  // 后端会忽略这个字段，保持原有的 isActive 状态
+    }
+    await invoke("update_profile", { id, profile: fullProfile })
     console.log("[API] update_profile success")
   } catch (error) {
     console.error("[API] update_profile error:", error)

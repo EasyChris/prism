@@ -23,7 +23,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
           <div className="flex items-center justify-between">
             {/* Logo */}
             <h1 className="text-xl font-semibold text-gray-900">
-              Claude Code Proxy Hub
+              Prism Hub
             </h1>
 
             {/* Tab Navigation */}

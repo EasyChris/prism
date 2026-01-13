@@ -7,6 +7,24 @@ use std::sync::{Arc, RwLock};
 /// 全局配置管理器
 pub type SharedConfigManager = Arc<RwLock<ConfigManager>>;
 
+/// 模型映射模式
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum ModelMappingMode {
+    /// 透传：使用请求中的原始模型
+    Passthrough,
+    /// 覆盖：强制使用指定模型
+    Override,
+    /// 映射：根据规则表映射
+    Map,
+}
+
+impl Default for ModelMappingMode {
+    fn default() -> Self {
+        ModelMappingMode::Passthrough
+    }
+}
+
 /// API 配置档案
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Profile {
@@ -22,6 +40,16 @@ pub struct Profile {
     pub model_id: String,
     /// 是否激活
     pub is_active: bool,
+
+    /// 模型映射模式
+    #[serde(default)]
+    pub model_mapping_mode: ModelMappingMode,
+    /// 覆盖模式使用的目标模型
+    #[serde(default)]
+    pub override_model: Option<String>,
+    /// 映射模式使用的映射规则表
+    #[serde(default)]
+    pub model_mappings: HashMap<String, String>,
 }
 
 impl Profile {
@@ -33,6 +61,32 @@ impl Profile {
             api_key,
             model_id,
             is_active: false,
+            model_mapping_mode: ModelMappingMode::Passthrough,
+            override_model: None,
+            model_mappings: HashMap::new(),
+        }
+    }
+
+    /// 解析模型：根据映射模式返回最终使用的模型
+    pub fn resolve_model(&self, original_model: &str) -> String {
+        match &self.model_mapping_mode {
+            ModelMappingMode::Passthrough => {
+                // 透传模式：使用原始模型
+                original_model.to_string()
+            }
+            ModelMappingMode::Override => {
+                // 覆盖模式：使用配置的目标模型，如果未配置则回退到原始模型
+                self.override_model
+                    .clone()
+                    .unwrap_or_else(|| original_model.to_string())
+            }
+            ModelMappingMode::Map => {
+                // 映射模式：查找映射表，如果未找到则回退到原始模型
+                self.model_mappings
+                    .get(original_model)
+                    .cloned()
+                    .unwrap_or_else(|| original_model.to_string())
+            }
         }
     }
 }
@@ -86,6 +140,13 @@ impl ConfigManager {
     /// 获取所有配置
     pub fn list_profiles(&self) -> Vec<&Profile> {
         self.profiles.values().collect()
+    }
+
+    /// 获取所有配置及其 HashMap key
+    pub fn get_profiles_with_keys(&self) -> Vec<(String, &Profile)> {
+        self.profiles.iter()
+            .map(|(k, v)| (k.clone(), v))
+            .collect()
     }
 
     /// 保存配置到文件

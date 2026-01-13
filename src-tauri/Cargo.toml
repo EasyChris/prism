@@ -44,3 +44,7 @@ uuid = { version = "1.0", features = ["v4"] }
 
 # 全局静态变量
 lazy_static = "1.4"
+
+# SQLite 数据库
+rusqlite = { version = "0.32", features = ["bundled"] }
+dirs = "5.0"

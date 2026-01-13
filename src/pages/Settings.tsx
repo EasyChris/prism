@@ -80,7 +80,7 @@ export function Settings() {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">关于</h3>
           <div className="space-y-2 text-sm text-gray-600">
             <div>版本：0.1.0</div>
-            <div>Claude Code Proxy Hub - 专为 Claude Code 打造的动态路由网关</div>
+            <div>Prism Hub - 专为 Claude Code 打造的动态路由网关</div>
           </div>
         </div>
       </div>

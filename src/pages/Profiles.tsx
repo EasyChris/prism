@@ -4,6 +4,8 @@ import { ProfileForm } from "@/components/ProfileForm"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
 import * as api from "@/lib/api"
 
+type ModelMappingMode = "passthrough" | "override" | "map"
+
 interface Profile {
   id: string
   name: string
@@ -11,6 +13,9 @@ interface Profile {
   apiKey: string
   modelId: string
   isActive: boolean
+  modelMappingMode: ModelMappingMode
+  overrideModel?: string
+  modelMappings: Record<string, string>
 }
 
 export function Profiles() {
@@ -51,21 +56,10 @@ export function Profiles() {
     try {
       if (editingProfile) {
         // 编辑现有配置
-        await api.updateProfile(
-          editingProfile.id,
-          formData.name,
-          formData.apiBaseUrl,
-          formData.apiKey,
-          formData.modelId
-        )
+        await api.updateProfile(editingProfile.id, formData)
       } else {
         // 添加新配置
-        await api.createProfile(
-          formData.name,
-          formData.apiBaseUrl,
-          formData.apiKey,
-          formData.modelId
-        )
+        await api.createProfile(formData)
       }
       setIsModalOpen(false)
       await loadProfiles() // 重新加载配置列表

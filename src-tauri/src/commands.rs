@@ -1,7 +1,8 @@
 // Tauri 命令：配置管理 API
 
-use crate::config::{ConfigManager, Profile};
+use crate::config::{ConfigManager, ModelMappingMode, Profile};
 use crate::logger::RequestLog;
+use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use tauri::{Manager, State};
 
@@ -16,6 +17,9 @@ pub struct ProfileDto {
     pub api_key: String,
     pub model_id: String,
     pub is_active: bool,
+    pub model_mapping_mode: ModelMappingMode,
+    pub override_model: Option<String>,
+    pub model_mappings: HashMap<String, String>,
 }
 
 impl From<&Profile> for ProfileDto {
@@ -27,6 +31,9 @@ impl From<&Profile> for ProfileDto {
             api_key: profile.api_key.clone(),
             model_id: profile.model_id.clone(),
             is_active: profile.is_active,
+            model_mapping_mode: profile.model_mapping_mode.clone(),
+            override_model: profile.override_model.clone(),
+            model_mappings: profile.model_mappings.clone(),
         }
     }
 }
@@ -36,26 +43,51 @@ pub fn get_all_profiles(config: State<SharedConfigManager>) -> Result<Vec<Profil
     let manager = config.read().map_err(|e| e.to_string())?;
 
     let profiles: Vec<ProfileDto> = manager
-        .list_profiles()
+        .get_profiles_with_keys()
         .iter()
-        .map(|p| ProfileDto::from(*p))
+        .map(|(key, profile)| {
+            let mut dto = ProfileDto::from(*profile);
+            dto.id = key.clone();  // 使用 HashMap key 作为 ID
+            dto
+        })
         .collect();
 
     Ok(profiles)
 }
 
+// 创建配置时使用的 DTO（不需要 id 和 isActive）
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateProfileDto {
+    pub name: String,
+    pub api_base_url: String,
+    pub api_key: String,
+    pub model_id: String,
+    pub model_mapping_mode: ModelMappingMode,
+    pub override_model: Option<String>,
+    pub model_mappings: HashMap<String, String>,
+}
+
 #[tauri::command]
 pub fn create_profile(
     config: State<SharedConfigManager>,
-    name: String,
-    api_base_url: String,
-    api_key: String,
-    model_id: String,
+    profile: CreateProfileDto,
 ) -> Result<String, String> {
     let mut manager = config.write().map_err(|e| e.to_string())?;
 
-    let profile = Profile::new(name, api_base_url, api_key, model_id);
-    let profile_id = manager.create_profile(profile).map_err(|e| e.to_string())?;
+    let mut new_profile = Profile::new(
+        profile.name,
+        profile.api_base_url,
+        profile.api_key,
+        profile.model_id,
+    );
+
+    // 设置模型映射相关字段
+    new_profile.model_mapping_mode = profile.model_mapping_mode;
+    new_profile.override_model = profile.override_model;
+    new_profile.model_mappings = profile.model_mappings;
+
+    let profile_id = manager.create_profile(new_profile).map_err(|e| e.to_string())?;
 
     // 保存到文件
     let config_path = crate::config::get_config_path();
@@ -68,15 +100,28 @@ pub fn create_profile(
 pub fn update_profile(
     config: State<SharedConfigManager>,
     id: String,
-    name: String,
-    api_base_url: String,
-    api_key: String,
-    model_id: String,
+    profile: ProfileDto,
 ) -> Result<(), String> {
     let mut manager = config.write().map_err(|e| e.to_string())?;
 
-    let profile = Profile::new(name, api_base_url, api_key, model_id);
-    manager.update_profile(&id, profile).map_err(|e| e.to_string())?;
+    // 获取原有配置以保留 ID 和 isActive 状态
+    let existing_profile = manager.get_profile(&id)
+        .ok_or_else(|| "Profile not found".to_string())?;
+
+    // 直接构造 Profile，保留原有的 ID 和 isActive
+    let updated_profile = Profile {
+        id: id.clone(),
+        name: profile.name,
+        api_base_url: profile.api_base_url,
+        api_key: profile.api_key,
+        model_id: profile.model_id,
+        is_active: existing_profile.is_active,
+        model_mapping_mode: profile.model_mapping_mode,
+        override_model: profile.override_model,
+        model_mappings: profile.model_mappings,
+    };
+
+    manager.update_profile(&id, updated_profile).map_err(|e| e.to_string())?;
 
     // 保存到文件
     let config_path = crate::config::get_config_path();
@@ -156,7 +201,8 @@ pub async fn get_logs(
     limit: Option<i32>,
     offset: Option<i32>,
 ) -> Result<Vec<RequestLogDto>, String> {
-    let limit = limit.unwrap_or(100) as usize;
+    // 限制最多返回 100 条日志
+    let limit = limit.unwrap_or(100).min(100) as usize;
     let offset = offset.unwrap_or(0) as usize;
 
     let logs = crate::logger::get_logs(limit, offset).await;

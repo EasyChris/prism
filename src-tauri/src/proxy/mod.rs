@@ -47,19 +47,34 @@ async fn handle_messages(
 
     log::info!("Using profile: {} ({})", profile.name, profile.api_base_url);
 
-    // 解析请求体以获取模型信息
-    let model = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&body) {
-        json.get("model")
+    // 解析请求体以获取模型信息并应用模型映射
+    let (original_model, mapped_model, modified_body) = if let Ok(mut json) = serde_json::from_str::<serde_json::Value>(&body) {
+        let original = json.get("model")
             .and_then(|m| m.as_str())
             .unwrap_or("unknown")
-            .to_string()
+            .to_string();
+
+        // 使用 Profile 的 resolve_model 方法进行模型映射
+        let mapped = profile.resolve_model(&original);
+
+        // 如果模型发生了映射，修改请求体中的 model 字段
+        if original != mapped {
+            log::info!("Model mapping: {} -> {}", original, mapped);
+            json["model"] = serde_json::Value::String(mapped.clone());
+        }
+
+        let new_body = serde_json::to_string(&json).unwrap_or(body.clone());
+        (original, mapped, new_body)
     } else {
-        "unknown".to_string()
+        let default_model = "unknown".to_string();
+        (default_model.clone(), default_model, body.clone())
     };
-    log::info!("Request model: {}", model);
+
+    log::info!("Original model: {}", original_model);
+    log::info!("Mapped model: {}", mapped_model);
 
     // 检查是否是流式请求
-    let is_stream = body.contains("\"stream\":true") || body.contains("\"stream\": true");
+    let is_stream = modified_body.contains("\"stream\":true") || modified_body.contains("\"stream\": true");
     log::info!("Request is streaming: {}", is_stream);
 
     // 构建上游 API URL
@@ -112,12 +127,12 @@ async fn handle_messages(
         }
     }
 
-    // 转发请求到上游 API
+    // 转发请求到上游 API（使用修改后的请求体）
     log::info!("Sending request to upstream...");
     let response = client
         .post(&upstream_url)
         .headers(request_headers)
-        .body(body)
+        .body(modified_body)
         .send()
         .await
         .map_err(|e| {
@@ -153,10 +168,11 @@ async fn handle_messages(
         log::info!("Handling streaming response");
 
         // 创建日志记录（流式响应的 Token 统计会在流结束后更新）
+        // 记录映射后的模型名称
         let mut request_log = RequestLog::new(
             profile.id.clone(),
             profile.name.clone(),
-            model.clone(),
+            mapped_model.clone(),
             profile.api_base_url.clone(),
         );
         request_log.duration_ms = start_time.elapsed().as_millis() as i64;
@@ -211,11 +227,11 @@ async fn handle_messages(
     // 计算耗时
     let duration_ms = start_time.elapsed().as_millis() as i64;
 
-    // 记录日志
+    // 记录日志（使用映射后的模型名称）
     let mut request_log = RequestLog::new(
         profile.id.clone(),
         profile.name.clone(),
-        model.clone(),
+        mapped_model.clone(),
         profile.api_base_url.clone(),
     );
     request_log.input_tokens = input_tokens;

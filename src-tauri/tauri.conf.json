@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Claude Code Proxy Hub",
+  "productName": "Prism Hub",
   "version": "0.1.0",
   "identifier": "com.tauri.dev",
   "build": {
@@ -12,11 +12,13 @@
   "app": {
     "windows": [
       {
-        "title": "Claude Code Proxy Hub",
-        "width": 800,
-        "height": 600,
+        "title": "Prism Hub",
+        "width": 1200,
+        "height": 800,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "minWidth": 1000,
+        "minHeight": 600
       }
     ],
     "security": {
