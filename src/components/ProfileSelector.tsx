@@ -21,12 +21,12 @@ export function ProfileSelector({
     return (
       <button
         onClick={onAddProfile}
-        className="w-full flex items-center justify-between px-4 py-3 bg-white border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-400 hover:bg-indigo-50 transition-all group"
+        className="w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-700 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all group"
       >
-        <span className="text-sm text-gray-500 group-hover:text-indigo-600">
+        <span className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
           暂无配置，点击添加
         </span>
-        <Plus className="w-5 h-5 text-gray-400 group-hover:text-indigo-600" />
+        <Plus className="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" />
       </button>
     )
   }
@@ -34,21 +34,21 @@ export function ProfileSelector({
   return (
     <Listbox value={activeProfile?.id || ''} onChange={onProfileChange}>
       <div className="relative">
-        <Listbox.Button className="relative w-full cursor-pointer rounded-lg bg-white py-3 pl-4 pr-10 text-left border border-gray-300 hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
+        <Listbox.Button className="relative w-full cursor-pointer rounded-lg bg-white dark:bg-gray-700 py-3 pl-4 pr-10 text-left border border-gray-300 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-all">
           <span className="block truncate">
             {activeProfile ? (
               <div>
-                <div className="font-semibold text-gray-900">{activeProfile.name}</div>
-                <div className="text-xs text-gray-500 mt-0.5">
+                <div className="font-semibold text-gray-900 dark:text-white">{activeProfile.name}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                   {extractProvider(activeProfile.apiBaseUrl)} · {activeProfile.overrideModel || '透传模式'}
                 </div>
               </div>
             ) : (
-              <span className="text-gray-500">未激活配置</span>
+              <span className="text-gray-500 dark:text-gray-400">未激活配置</span>
             )}
           </span>
           <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-            <ChevronsUpDown className="h-5 w-5 text-gray-400" aria-hidden="true" />
+            <ChevronsUpDown className="h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
           </span>
         </Listbox.Button>
 
@@ -58,14 +58,14 @@ export function ProfileSelector({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <Listbox.Options className="absolute z-10 mt-1 max-h-80 w-full overflow-auto rounded-lg bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+          <Listbox.Options className="absolute z-10 mt-1 max-h-80 w-full overflow-auto rounded-lg bg-white dark:bg-gray-700 py-1 shadow-lg ring-1 ring-black dark:ring-gray-600 ring-opacity-5 dark:ring-opacity-50 focus:outline-none">
             {profiles.map((profile) => (
               <Listbox.Option
                 key={profile.id}
                 value={profile.id}
                 className={({ active }) =>
                   `relative cursor-pointer select-none py-3 pl-10 pr-4 ${
-                    active ? 'bg-indigo-50 text-indigo-900' : 'text-gray-900'
+                    active ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-900 dark:text-indigo-100' : 'text-gray-900 dark:text-gray-100'
                   }`
                 }
               >
@@ -73,12 +73,12 @@ export function ProfileSelector({
                   <>
                     <div className={`block ${selected ? 'font-semibold' : 'font-normal'}`}>
                       <div className="text-sm">{profile.name}</div>
-                      <div className="text-xs text-gray-500 mt-0.5">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                         {extractProvider(profile.apiBaseUrl)} · {profile.overrideModel || '透传模式'}
                       </div>
                     </div>
                     {selected && (
-                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600">
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400">
                         <Check className="h-5 w-5" aria-hidden="true" />
                       </span>
                     )}
@@ -88,13 +88,13 @@ export function ProfileSelector({
             ))}
 
             {/* 添加新配置选项 */}
-            <div className="border-t border-gray-200 mt-1 pt-1">
+            <div className="border-t border-gray-200 dark:border-gray-600 mt-1 pt-1">
               <button
                 onClick={(e) => {
                   e.preventDefault()
                   onAddProfile()
                 }}
-                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-indigo-600 hover:bg-indigo-50 transition-colors"
+                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 <span>添加新配置</span>
