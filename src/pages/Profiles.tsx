@@ -62,6 +62,13 @@ export function Profiles() {
       }
       setIsModalOpen(false)
       await loadProfiles() // 重新加载配置列表
+
+      // 更新托盘菜单
+      try {
+        await api.updateTrayMenu()
+      } catch (error) {
+        console.error("Failed to update tray menu:", error)
+      }
     } catch (error) {
       console.error("Failed to save profile:", error)
       alert("保存配置失败：" + error)
@@ -80,6 +87,13 @@ export function Profiles() {
         setIsDeleteDialogOpen(false)
         setDeletingProfile(null)
         await loadProfiles() // 重新加载配置列表
+
+        // 更新托盘菜单
+        try {
+          await api.updateTrayMenu()
+        } catch (error) {
+          console.error("Failed to update tray menu:", error)
+        }
       } catch (error) {
         console.error("Failed to delete profile:", error)
         alert("删除配置失败：" + error)
@@ -91,6 +105,13 @@ export function Profiles() {
     try {
       await api.activateProfile(profile.id)
       await loadProfiles() // 重新加载配置列表
+
+      // 更新托盘菜单
+      try {
+        await api.updateTrayMenu()
+      } catch (error) {
+        console.error("Failed to update tray menu:", error)
+      }
     } catch (error) {
       console.error("Failed to activate profile:", error)
       alert("激活配置失败：" + error)

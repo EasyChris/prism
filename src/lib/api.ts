@@ -239,3 +239,29 @@ export async function getProxyServerUrl(): Promise<string> {
     throw error
   }
 }
+
+// ==================== 窗口控制相关接口 ====================
+
+// 显示主窗口
+export async function showMainWindow(): Promise<void> {
+  console.log("[API] Calling show_main_window...")
+  try {
+    await invoke("show_main_window")
+    console.log("[API] show_main_window success")
+  } catch (error) {
+    console.error("[API] show_main_window error:", error)
+    throw error
+  }
+}
+
+// 更新托盘菜单
+export async function updateTrayMenu(): Promise<void> {
+  console.log("[API] Calling update_tray_menu...")
+  try {
+    await invoke("update_tray_menu")
+    console.log("[API] update_tray_menu success")
+  } catch (error) {
+    console.error("[API] update_tray_menu error:", error)
+    throw error
+  }
+}

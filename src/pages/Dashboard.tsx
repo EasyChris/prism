@@ -147,7 +147,6 @@ export function Dashboard() {
   // 使用真实数据或空数组
   const currentData = tokenData.length > 0 ? tokenData : []
   const maxTokens = currentData.length > 0 ? Math.max(...currentData.map(d => d.tokens)) : 0
-  const maxCacheTokens = currentData.length > 0 ? Math.max(...currentData.map(d => d.cacheReadTokens || 0)) : 0
   const totalCacheHits = currentData.reduce((sum, d) => sum + (d.cacheReadTokens || 0), 0)
 
   // 时间范围标签映射
@@ -325,7 +324,6 @@ export function Dashboard() {
                   const totalHeight = (data.tokens / maxTokens) * 100
                   const totalHeightPx = (totalHeight / 100) * 160 // 160px = h-40
                   const cacheTokens = data.cacheReadTokens || 0
-                  const regularTokens = data.tokens - cacheTokens
                   const cacheHeightPx = cacheTokens > 0 ? (cacheTokens / data.tokens) * totalHeightPx : 0
                   const regularHeightPx = totalHeightPx - cacheHeightPx
 

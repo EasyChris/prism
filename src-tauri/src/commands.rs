@@ -4,7 +4,7 @@ use crate::config::{ConfigManager, ModelMappingMode, Profile};
 use crate::logger::RequestLog;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
-use tauri::State;
+use tauri::{Manager, State};
 
 pub type SharedConfigManager = Arc<RwLock<ConfigManager>>;
 
@@ -307,4 +307,24 @@ pub fn get_proxy_server_url() -> Result<String, String> {
     // 返回代理服务器的地址
     // 注意：这里的地址应该与 proxy/mod.rs 中的地址保持一致
     Ok("http://127.0.0.1:3000".to_string())
+}
+
+// ==================== 窗口控制命令 ====================
+
+#[tauri::command]
+pub fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("main") {
+        window.show().map_err(|e: tauri::Error| e.to_string())?;
+        window.set_focus().map_err(|e: tauri::Error| e.to_string())?;
+        log::info!("Main window shown");
+        Ok(())
+    } else {
+        Err("Main window not found".to_string())
+    }
+}
+
+#[tauri::command]
+pub fn update_tray_menu(app: tauri::AppHandle, config: State<SharedConfigManager>) -> Result<(), String> {
+    crate::tray::rebuild_tray_menu(&app, &config)
+        .map_err(|e| format!("Failed to update tray menu: {}", e))
 }

@@ -3,6 +3,7 @@ pub mod config;
 pub mod commands;
 pub mod logger;
 pub mod db;
+pub mod tray;
 
 use std::sync::{Arc, RwLock};
 use tauri::Manager;
@@ -73,9 +74,21 @@ pub fn run() {
       });
 
       // 将配置管理器作为状态管理
-      app.manage(shared_config);
+      app.manage(shared_config.clone());
+
+      // 初始化系统托盘
+      if let Err(e) = tray::init_tray(app.handle(), shared_config) {
+        log::error!("Failed to initialize tray: {}", e);
+      }
 
       Ok(())
+    })
+    .on_window_event(|window, event| {
+      if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+        // 隐藏窗口而不是关闭应用
+        window.hide().unwrap();
+        api.prevent_close();
+      }
     })
     .invoke_handler(tauri::generate_handler![
       commands::get_all_profiles,
@@ -91,6 +104,8 @@ pub fn run() {
       commands::get_auth_enabled,
       commands::set_auth_enabled,
       commands::get_proxy_server_url,
+      commands::show_main_window,
+      commands::update_tray_menu,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
