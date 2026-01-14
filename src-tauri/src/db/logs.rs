@@ -17,10 +17,11 @@ pub async fn save_log_to_db(log: &RequestLog) -> Result<(), String> {
             INSERT INTO request_logs (
                 request_id, timestamp, profile_id, profile_name, provider,
                 original_model, model_mode, forwarded_model,
-                input_tokens, output_tokens, duration_ms, upstream_duration_ms,
+                input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens,
+                duration_ms, upstream_duration_ms,
                 status_code, error_message, is_stream,
                 request_size_bytes, response_size_bytes
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)
             "#,
             rusqlite::params![
                 &log.request_id,
@@ -33,6 +34,8 @@ pub async fn save_log_to_db(log: &RequestLog) -> Result<(), String> {
                 &log.forwarded_model,
                 log.input_tokens,
                 log.output_tokens,
+                log.cache_creation_input_tokens,
+                log.cache_read_input_tokens,
                 log.duration_ms,
                 log.upstream_duration_ms,
                 log.status_code,
@@ -65,7 +68,8 @@ pub async fn get_logs_from_db(limit: usize, offset: usize) -> Result<Vec<Request
                 r#"
                 SELECT request_id, timestamp, profile_id, profile_name, provider,
                        original_model, model_mode, forwarded_model,
-                       input_tokens, output_tokens, duration_ms, upstream_duration_ms,
+                       input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens,
+                       duration_ms, upstream_duration_ms,
                        status_code, error_message, is_stream,
                        request_size_bytes, response_size_bytes
                 FROM request_logs
@@ -88,13 +92,15 @@ pub async fn get_logs_from_db(limit: usize, offset: usize) -> Result<Vec<Request
                     forwarded_model: row.get(7)?,
                     input_tokens: row.get(8)?,
                     output_tokens: row.get(9)?,
-                    duration_ms: row.get(10)?,
-                    upstream_duration_ms: row.get(11)?,
-                    status_code: row.get(12)?,
-                    error_message: row.get(13)?,
-                    is_stream: row.get::<_, i32>(14)? != 0,
-                    request_size_bytes: row.get(15)?,
-                    response_size_bytes: row.get(16)?,
+                    cache_creation_input_tokens: row.get(10)?,
+                    cache_read_input_tokens: row.get(11)?,
+                    duration_ms: row.get(12)?,
+                    upstream_duration_ms: row.get(13)?,
+                    status_code: row.get(14)?,
+                    error_message: row.get(15)?,
+                    is_stream: row.get::<_, i32>(16)? != 0,
+                    request_size_bytes: row.get(17)?,
+                    response_size_bytes: row.get(18)?,
                 })
             })
             .map_err(|e| format!("Failed to query logs: {}", e))?

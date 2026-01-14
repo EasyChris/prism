@@ -46,6 +46,10 @@ pub async fn init_database() -> Result<(), String> {
             input_tokens INTEGER NOT NULL,
             output_tokens INTEGER NOT NULL,
 
+            -- 缓存相关统计
+            cache_creation_input_tokens INTEGER NOT NULL DEFAULT 0,
+            cache_read_input_tokens INTEGER NOT NULL DEFAULT 0,
+
             -- 性能指标
             duration_ms INTEGER NOT NULL,
             upstream_duration_ms INTEGER,

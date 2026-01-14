@@ -61,6 +61,10 @@ pub struct RequestLog {
     pub input_tokens: i32,
     pub output_tokens: i32,
 
+    // 缓存相关统计
+    pub cache_creation_input_tokens: i32,  // 创建缓存的 token 数
+    pub cache_read_input_tokens: i32,      // 从缓存读取的 token 数（命中缓存）
+
     // 性能指标
     pub duration_ms: i64,
     pub upstream_duration_ms: Option<i64>,  // 上游响应时间
@@ -105,6 +109,8 @@ impl RequestLog {
             forwarded_model,
             input_tokens: 0,
             output_tokens: 0,
+            cache_creation_input_tokens: 0,
+            cache_read_input_tokens: 0,
             duration_ms: 0,
             upstream_duration_ms: None,
             status_code: 0,

@@ -17,6 +17,7 @@ pub struct DashboardStats {
 pub struct TokenDataPoint {
     pub label: String,
     pub tokens: i32,
+    pub cache_read_tokens: i32,  // 缓存命中的 token 数
 }
 
 /// 获取仪表盘统计数据
@@ -129,6 +130,7 @@ fn get_hourly_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, 
         .map(|hour| TokenDataPoint {
             label: format!("{:02}:00", hour),
             tokens: 0,
+            cache_read_tokens: 0,
         })
         .collect();
 
@@ -138,7 +140,8 @@ fn get_hourly_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, 
             r#"
             SELECT
                 CAST((timestamp - ?1) / 3600000 AS INTEGER) as hour,
-                SUM(input_tokens + output_tokens) as tokens
+                SUM(input_tokens + output_tokens) as tokens,
+                SUM(cache_read_input_tokens) as cache_read_tokens
             FROM request_logs
             WHERE timestamp >= ?1 AND timestamp < ?1 + 86400000
             GROUP BY hour
@@ -148,14 +151,15 @@ fn get_hourly_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, 
 
     let rows = stmt
         .query_map([today_start], |row| {
-            Ok((row.get::<_, i32>(0)?, row.get::<_, i32>(1)?))
+            Ok((row.get::<_, i32>(0)?, row.get::<_, i32>(1)?, row.get::<_, i32>(2)?))
         })
         .map_err(|e| format!("Failed to query hourly stats: {}", e))?;
 
     for row in rows {
-        let (hour, tokens) = row.map_err(|e| format!("Failed to read row: {}", e))?;
+        let (hour, tokens, cache_read_tokens) = row.map_err(|e| format!("Failed to read row: {}", e))?;
         if hour >= 0 && hour < 24 {
             data_points[hour as usize].tokens = tokens;
+            data_points[hour as usize].cache_read_tokens = cache_read_tokens;
         }
     }
 
@@ -187,6 +191,7 @@ fn get_daily_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, S
         .map(|&day| TokenDataPoint {
             label: day.to_string(),
             tokens: 0,
+            cache_read_tokens: 0,
         })
         .collect();
 
@@ -196,7 +201,8 @@ fn get_daily_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, S
             r#"
             SELECT
                 CAST((timestamp - ?1) / 86400000 AS INTEGER) as day,
-                SUM(input_tokens + output_tokens) as tokens
+                SUM(input_tokens + output_tokens) as tokens,
+                SUM(cache_read_input_tokens) as cache_read_tokens
             FROM request_logs
             WHERE timestamp >= ?1 AND timestamp < ?1 + 604800000
             GROUP BY day
@@ -206,14 +212,15 @@ fn get_daily_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, S
 
     let rows = stmt
         .query_map([monday_start], |row| {
-            Ok((row.get::<_, i32>(0)?, row.get::<_, i32>(1)?))
+            Ok((row.get::<_, i32>(0)?, row.get::<_, i32>(1)?, row.get::<_, i32>(2)?))
         })
         .map_err(|e| format!("Failed to query daily stats: {}", e))?;
 
     for row in rows {
-        let (day, tokens) = row.map_err(|e| format!("Failed to read row: {}", e))?;
+        let (day, tokens, cache_read_tokens) = row.map_err(|e| format!("Failed to read row: {}", e))?;
         if day >= 0 && day < 7 {
             data_points[day as usize].tokens = tokens;
+            data_points[day as usize].cache_read_tokens = cache_read_tokens;
         }
     }
 
@@ -240,6 +247,7 @@ fn get_weekly_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, 
         .map(|week| TokenDataPoint {
             label: format!("第{}周", week),
             tokens: 0,
+            cache_read_tokens: 0,
         })
         .collect();
 
@@ -249,7 +257,8 @@ fn get_weekly_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, 
             r#"
             SELECT
                 CAST((timestamp - ?1) / 604800000 AS INTEGER) as week,
-                SUM(input_tokens + output_tokens) as tokens
+                SUM(input_tokens + output_tokens) as tokens,
+                SUM(cache_read_input_tokens) as cache_read_tokens
             FROM request_logs
             WHERE timestamp >= ?1 AND timestamp < ?1 + 2419200000
             GROUP BY week
@@ -259,14 +268,15 @@ fn get_weekly_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, 
 
     let rows = stmt
         .query_map([four_weeks_ago], |row| {
-            Ok((row.get::<_, i32>(0)?, row.get::<_, i32>(1)?))
+            Ok((row.get::<_, i32>(0)?, row.get::<_, i32>(1)?, row.get::<_, i32>(2)?))
         })
         .map_err(|e| format!("Failed to query weekly stats: {}", e))?;
 
     for row in rows {
-        let (week, tokens) = row.map_err(|e| format!("Failed to read row: {}", e))?;
+        let (week, tokens, cache_read_tokens) = row.map_err(|e| format!("Failed to read row: {}", e))?;
         if week >= 0 && week < 4 {
             data_points[week as usize].tokens = tokens;
+            data_points[week as usize].cache_read_tokens = cache_read_tokens;
         }
     }
 
@@ -288,6 +298,7 @@ fn get_monthly_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>,
         .map(|month| TokenDataPoint {
             label: format!("{}月", month),
             tokens: 0,
+            cache_read_tokens: 0,
         })
         .collect();
 
@@ -297,7 +308,8 @@ fn get_monthly_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>,
             r#"
             SELECT
                 CAST((timestamp - ?1) / 2592000000 AS INTEGER) as month,
-                SUM(input_tokens + output_tokens) as tokens
+                SUM(input_tokens + output_tokens) as tokens,
+                SUM(cache_read_input_tokens) as cache_read_tokens
             FROM request_logs
             WHERE timestamp >= ?1
             GROUP BY month
@@ -307,14 +319,15 @@ fn get_monthly_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>,
 
     let rows = stmt
         .query_map([year_start], |row| {
-            Ok((row.get::<_, i32>(0)?, row.get::<_, i32>(1)?))
+            Ok((row.get::<_, i32>(0)?, row.get::<_, i32>(1)?, row.get::<_, i32>(2)?))
         })
         .map_err(|e| format!("Failed to query monthly stats: {}", e))?;
 
     for row in rows {
-        let (month, tokens) = row.map_err(|e| format!("Failed to read row: {}", e))?;
+        let (month, tokens, cache_read_tokens) = row.map_err(|e| format!("Failed to read row: {}", e))?;
         if month >= 0 && month < 12 {
             data_points[month as usize].tokens = tokens;
+            data_points[month as usize].cache_read_tokens = cache_read_tokens;
         }
     }
 

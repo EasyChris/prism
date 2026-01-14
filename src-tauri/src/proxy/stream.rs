@@ -26,6 +26,8 @@ pub(super) async fn handle_stream_response(
     let mut buffer = Vec::new();
     let mut input_tokens = 0;
     let mut output_tokens = 0;
+    let mut cache_creation_input_tokens = 0;
+    let mut cache_read_input_tokens = 0;
 
     while let Some(chunk_result) = stream.next().await {
         match chunk_result {
@@ -52,6 +54,15 @@ pub(super) async fn handle_stream_response(
                                         .or_else(|| usage.get("completion_tokens").and_then(|t| t.as_i64())) {
                                         output_tokens = output as i32;
                                     }
+                                    // 提取缓存相关的 token 信息
+                                    if let Some(cache_creation) = usage.get("cache_creation_input_tokens")
+                                        .and_then(|t| t.as_i64()) {
+                                        cache_creation_input_tokens = cache_creation as i32;
+                                    }
+                                    if let Some(cache_read) = usage.get("cache_read_input_tokens")
+                                        .and_then(|t| t.as_i64()) {
+                                        cache_read_input_tokens = cache_read as i32;
+                                    }
                                 }
                             }
                         }
@@ -68,9 +79,14 @@ pub(super) async fn handle_stream_response(
     // 更新日志的 Token 信息
     request_log.input_tokens = input_tokens;
     request_log.output_tokens = output_tokens;
+    request_log.cache_creation_input_tokens = cache_creation_input_tokens;
+    request_log.cache_read_input_tokens = cache_read_input_tokens;
     request_log.duration_ms = start_time.elapsed().as_millis() as i64;
 
-    log::info!("Stream completed - input_tokens: {}, output_tokens: {}", input_tokens, output_tokens);
+    log::info!(
+        "Stream completed - input_tokens: {}, output_tokens: {}, cache_creation: {}, cache_read: {}",
+        input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens
+    );
 
     // 异步保存更新后的日志
     tokio::spawn(async move {

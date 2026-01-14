@@ -157,6 +157,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 export interface TokenDataPoint {
   label: string
   tokens: number
+  cacheReadTokens: number  // 缓存命中的 token 数
 }
 
 export type TimeRange = 'hour' | 'day' | 'week' | 'month'

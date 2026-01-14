@@ -147,6 +147,8 @@ export function Dashboard() {
   // 使用真实数据或空数组
   const currentData = tokenData.length > 0 ? tokenData : []
   const maxTokens = currentData.length > 0 ? Math.max(...currentData.map(d => d.tokens)) : 0
+  const maxCacheTokens = currentData.length > 0 ? Math.max(...currentData.map(d => d.cacheReadTokens || 0)) : 0
+  const totalCacheHits = currentData.reduce((sum, d) => sum + (d.cacheReadTokens || 0), 0)
 
   // 时间范围标签映射
   const timeRangeLabels = {
@@ -320,18 +322,42 @@ export function Dashboard() {
               {/* Bars */}
               <div className="flex items-end justify-between h-40 gap-1">
                 {currentData.map((data, index) => {
-                  const heightPercent = (data.tokens / maxTokens) * 100
-                  const heightPx = (heightPercent / 100) * 160 // 160px = h-40
+                  const totalHeight = (data.tokens / maxTokens) * 100
+                  const totalHeightPx = (totalHeight / 100) * 160 // 160px = h-40
+                  const cacheTokens = data.cacheReadTokens || 0
+                  const regularTokens = data.tokens - cacheTokens
+                  const cacheHeightPx = cacheTokens > 0 ? (cacheTokens / data.tokens) * totalHeightPx : 0
+                  const regularHeightPx = totalHeightPx - cacheHeightPx
+
                   return (
                     <div key={index} className="flex-1 flex items-end" style={{ height: '160px' }}>
-                      <div
-                        className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t hover:from-blue-600 hover:to-blue-500 transition-all cursor-pointer relative group min-h-[2px]"
-                        style={{ height: `${heightPx}px` }}
-                      >
+                      <div className="w-full flex flex-col relative group cursor-pointer" style={{ height: `${totalHeightPx}px` }}>
+                        {/* 缓存命中部分（顶部，琥珀色） */}
+                        {cacheHeightPx > 0 && (
+                          <div
+                            className="w-full bg-gradient-to-t from-amber-500 to-amber-400 rounded-t hover:from-amber-600 hover:to-amber-500 transition-all"
+                            style={{ height: `${cacheHeightPx}px` }}
+                          />
+                        )}
+                        {/* 常规 token 部分（底部，蓝色） */}
+                        <div
+                          className="w-full bg-gradient-to-t from-blue-500 to-blue-400 hover:from-blue-600 hover:to-blue-500 transition-all min-h-[2px]"
+                          style={{
+                            height: `${regularHeightPx}px`,
+                            borderTopLeftRadius: cacheHeightPx > 0 ? '0' : '0.25rem',
+                            borderTopRightRadius: cacheHeightPx > 0 ? '0' : '0.25rem'
+                          }}
+                        />
                         {/* Tooltip on hover */}
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
                           {data.label}<br/>
-                          {data.tokens.toLocaleString()} tokens
+                          总计: {data.tokens.toLocaleString()} tokens
+                          {cacheTokens > 0 && (
+                            <>
+                              <br/>
+                              <span className="text-amber-400">缓存: {cacheTokens.toLocaleString()} tokens</span>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -364,12 +390,25 @@ export function Dashboard() {
 
         {/* Legend */}
         <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 bg-blue-500 rounded"></div>
-            <span className="text-gray-600 dark:text-gray-400">Token 使用量</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 bg-blue-500 rounded"></div>
+              <span className="text-gray-600 dark:text-gray-400">常规 Token</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 bg-amber-500 rounded"></div>
+              <span className="text-gray-600 dark:text-gray-400">缓存命中</span>
+            </div>
           </div>
-          <div className="text-gray-500 dark:text-gray-400">
-            峰值: <span className="font-semibold text-gray-900 dark:text-white">{maxTokens.toLocaleString()}</span> tokens
+          <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400">
+            <div>
+              峰值: <span className="font-semibold text-gray-900 dark:text-white">{maxTokens.toLocaleString()}</span> tokens
+            </div>
+            {totalCacheHits > 0 && (
+              <div>
+                缓存: <span className="font-semibold text-amber-600 dark:text-amber-400">{totalCacheHits.toLocaleString()}</span> tokens
+              </div>
+            )}
           </div>
         </div>
       </div>
