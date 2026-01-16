@@ -2,13 +2,11 @@
 
 <div align="center">
 
-**专为 Claude Code 打造的动态路由网关与流量审计工具**
+**专为 Claude Code 打造的智能路由网关与流量审计工具**
 
 一个运行在 macOS 上的轻量级桌面应用，作为 Claude Code 的本地中转站
 
-实现"一次配置，随意切换"的无缝体验，并提供完整的流量去向记录与成本审计
-
-[功能特性](#功能特性) • [快速开始](#快速开始) • [使用指南](#使用指南) • [开发文档](#开发文档)
+实现"一次配置，随意切换"的无缝体验，提供完整的流量去向记录与成本审计
 
 </div>
 
@@ -16,73 +14,45 @@
 
 ## 项目简介
 
-Claude Code Proxy Hub 是一个专为 Claude Code 设计的本地代理工具，解决以下痛点：
+Claude Code Proxy Hub 是一个专为 Claude Code 设计的本地代理工具，解决多 API 提供商管理、模型兼容性、流量审计等核心问题。
 
-- **多账号管理困难** - 需要频繁修改配置文件切换不同的 API 提供商
-- **成本不透明** - 不知道每次请求消耗了多少 Token，花费了多少钱
-- **流量去向不明** - 不清楚请求被路由到了哪个模型和提供商
-- **审计困难** - 缺乏完整的请求日志和统计数据
+### 核心特性
 
-### 核心价值
+**无需重启即时切换**
+- 菜单栏一键切换供应商，无需重启 Claude Code 窗口
+- 传统方式需要修改环境变量并重启窗口（耗时 30+ 秒），Proxy Hub 只需 1 秒
 
-✨ **一次配置，随意切换** - 在菜单栏一键切换不同的 API 配置档案
-📊 **完整审计** - 记录每次请求的 Token 消耗、耗时、状态码
-🔍 **流量追踪** - 清晰展示每个请求的路由去向（Provider + Model）
-🔒 **本地优先** - 所有数据仅在本地处理，API Key 加密存储
-⚡ **低延迟** - 毫秒级代理转发，对 Claude Code 使用体验无感知
+**智能模型映射**
+- 自动将标准模型名称（如 `claude-sonnet-4-5`）映射到不同提供商的实际模型 ID
+- 支持 Anthropic 官方 API、OpenRouter、第三方代理等多种模式
 
----
+**完整流量审计**
+- 记录每个请求的 Token 消耗（Input/Output/Total）
+- 追踪请���耗时、HTTP 状态码、路由去向
+- 提供成本估算和统计分析
 
-## 功能特性
-
-### 🎯 动态代理服务
-
-- 本地 HTTP 服务伪装成 Anthropic API
-- 请求级别的动态路由切换
-- SSE 流式响应完美透传
-- 智能错误处理与兜底机制
-
-### ⚙️ 配置管理
-
-- 多配置档案（Profile）管理
-- 支持字段：名称、API Base URL、API Key、Model ID
-- API Key 加密存储，界面脱敏展示
-- 单一激活配置，快速切换
-
-### 📝 日志与审计
-
-- 全链路请求日志记录
-- Token 统计（Input/Output/Total）
-- 路由去向追踪（Provider + Model）
-- 请求耗时监控
-- HTTP 状态码记录
-- 支持日志搜索和过滤
-
-### 🖥️ 用户界面
-
-- macOS 菜单栏常驻
-- 配置档案快速切换
-- 实时服务状态显示
-- 日志面板（表格展示）
-- 仪表盘（当前配置详情）
-- 统计数据可视化
+**本地优先与安全**
+- 所有数据仅在本地处理，API Key 使用 AES 加密存储
+- 界面默认脱敏展示，确保敏感信息安全
 
 ---
 
-## 技术栈
+## 界面预览
 
-### 后端
-- **Tauri v2** - 桌面应用框架
-- **Rust** - 高性能系统编程语言
-- **Axum** - 异步 HTTP 服务器框架
-- **Tokio** - 异步运行时
-- **SQLite** - 本地数据库
+### 仪表盘
+![仪表盘](docs/pic/1_仪表盘.png)
 
-### 前端
-- **React** - UI 框架
-- **TypeScript** - 类型安全
-- **Tailwind CSS v4** - 现代化样式框架
-- **Vite** - 快速构建工具
+实时显示当前激活配置、统计数据和关键指标。
+
+### 配置管理
+![配置管理](docs/pic/2_配置管理.png)
+
+统一管理多个 API 提供商配置，支持快速切换。
+
+### 添加配置
+![添加配置](docs/pic/3_添加配置.png)
+
+向导式配置流程，支持测试连接验证。
 
 ---
 
@@ -121,167 +91,60 @@ pnpm tauri build
 
 ### 配置 Claude Code
 
+**只需配置一次，之后无需修改任何环境变量**
+
 1. 启动 Claude Code Proxy Hub，默认监听 `http://localhost:3000`
+
 2. 配置 Claude Code 使用本地代理：
 
 ```bash
-# 设置 API Base URL
+# 在 ~/.zshrc 或 ~/.bashrc 中添加（只需一次）
 export ANTHROPIC_API_URL=http://localhost:3000
-
-# 设置一个占位 API Key（实际 Key 在 Proxy Hub 中配置）
-export ANTHROPIC_API_KEY=placeholder
+export ANTHROPIC_API_KEY=placeholder  # 占位符，实际 Key 在 Proxy Hub 中配置
 ```
 
-3. 在 Proxy Hub 中添加你的真实 API 配置档案
-4. 选择激活的配置档案
-5. 开始使用 Claude Code，所有请求将通过 Proxy Hub 转发
+3. 在 Proxy Hub 中添加你的 API 配置
+
+   **官方 API**
+   - API Base URL: `https://api.anthropic.com`
+   - API Key: `sk-ant-xxxxx`
+   - 模型映射: `claude-sonnet-4-5` → `claude-sonnet-4-20250514`
+
+   **OpenRouter**
+   - API Base URL: `https://openrouter.ai/api/v1`
+   - API Key: `sk-or-xxxxx`
+   - 模型映射: `claude-sonnet-4-5` → `anthropic/claude-sonnet-4-5`
+
+   **第三方代理**
+   - API Base URL: `https://your-proxy.com/v1`
+   - API Key: `custom-xxxxx`
+   - 模型映射: `claude-sonnet-4-5` → `claude-3-5-sonnet-20241022`
+
+4. 在菜单栏选择要使用的配置，无需重启 Claude Code，立即生效
 
 ---
 
-## 使用指南
+## 文档导航
 
-### 添加配置档案
-
-1. 点击菜单栏图标，选择"打开主界面"
-2. 切换到"配置管理"标签页
-3. 点击"添加配置"按钮
-4. 填写配置信息：
-   - **名称**：配置档案的显示名称（如 "OpenRouter - Claude"）
-   - **API Base URL**：API 提供商的基础 URL
-   - **API Key**：你的 API 密钥
-   - **Model ID**：要使用的模型 ID
-5. 点击"保存"
-
-### 切换配置档案
-
-**方式一：菜单栏快速切换**
-- 点击菜单栏图标
-- 在配置列表中选择要激活的配置
-
-**方式二：主界面切换**
-- 在"配置管理"页面
-- 点击配置卡片上的"激活"按钮
-
-### 查看日志
-
-1. 切换到"日志"标签页
-2. 查看所有请求记录，包括：
-   - 时间戳
-   - 使用的配置档案
-   - 模型 ID
-   - Token 消耗（Input/Output/Total）
-   - 请求耗时
-   - HTTP 状态码
-3. 使用搜索框过滤日志
-4. 点击日志条目查看详细信息
-
-### 查看统计
-
-1. 切换到"仪表盘"标签页
-2. 查看当前激活配置的详细信息
-3. 查看统计数据：
-   - 总请求次数
-   - 总 Token 消耗
-   - 平均响应时间
-   - 成功率
+- [使用指南](docs/使用指南.md) - 详细的三种配置模式和使用方法
+- [技术架构](docs/技术架构.md) - 技术栈、架构设计和核心模块
+- [开发文档](docs/开发文档.md) - 项目结构、开发环境和构建指南
+- [常见问题](docs/常见问题.md) - FAQ 和故障排查
+- [路线图](docs/路线图.md) - 已完成功能、开发中功能和未来计划
 
 ---
 
-## 开发文档
+## 对比
 
-### 项目结构
-
-```
-prism/
-├── src/                    # 前端代码
-│   ├── components/         # React 组件
-│   ├── pages/             # 页面组件
-│   ├── lib/               # 工具函数
-│   └── contexts/          # React Context
-├── src-tauri/             # Tauri 后端代码
-│   ├── src/
-│   │   ├── commands.rs    # Tauri 命令
-│   │   ├── config/        # 配置管理模块
-│   │   ├── db/            # 数据库模块
-│   │   ├── proxy/         # 代理服务模块
-│   │   └── logger/        # 日志模块
-│   └── Cargo.toml
-├── docs/                  # 开发文档
-├── todo/                  # 任务管理
-└── CLAUDE.md             # 项目开发指南
-```
-
-### 开发环境设置
-
-```bash
-# 安装 Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-
-# 安装 pnpm
-npm install -g pnpm
-
-# 安装依赖
-pnpm install
-
-# 运行开发服务器
-pnpm tauri dev
-```
-
-### 贡献指南
-
-欢迎贡献！请遵循以下步骤：
-
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
-
-详细开发规范请参考 [CLAUDE.md](CLAUDE.md)
-
----
-
-## 常见问题
-
-### Q: 为什么需要这个工具？
-
-A: 如果你使用 Claude Code 并且：
-- 使用多个 API 提供商（如 OpenRouter、Claude API、自建代理）
-- 需要追踪 Token 消耗和成本
-- 想要完整的请求日志和审计
-那么这个工具可以大大提升你的使用体验。
-
-### Q: 会影响 Claude Code 的性能吗？
-
-A: 不会。代理转发延迟控制在毫秒级，对使用体验无感知。
-
-### Q: API Key 安全吗？
-
-A: 是的。所有 API Key 都加密存储在本地数据库中，不会上传到任何服务器。
-
-### Q: 支持 Windows 和 Linux 吗？
-
-A: 目前仅支持 macOS。未来可能会支持其他平台。
-
-### Q: 可以用于其他 AI 工具吗？
-
-A: 理论上可以，只要该工具支持配置自定义 API Base URL。但本项目专为 Claude Code 优化。
-
----
-
-## 路线图
-
-- [x] 基础代理功能
-- [x] 配置管理
-- [x] 日志记录
-- [x] Token 统计
-- [x] 菜单栏集成
-- [ ] 统计数据可视化
-- [ ] 配置导入/导出
-- [ ] 自动更新
-- [ ] 开机自启动
-- [ ] 多语言支持
-- [ ] Windows/Linux 支持
+| 特性 | 传统方式 | Proxy Hub |
+|------|---------|-----------|
+| 切换供应商 | 修改环境变量 + 重启窗口 | 菜单栏一键切换 |
+| 模型兼容 | 手动修改模型 ID | 自动映射转换 |
+| Token 统计 | 无记录 | 完整追踪 |
+| 成本审计 | 估算困难 | 精确计算 |
+| 请求日志 | Claude Code 不提供 | 完整记录 |
+| 配置管理 | 分散在多个文件 | 统一管理 |
+| API Key 安全 | 明文存储 | 加密存储 |
 
 ---
 
@@ -312,8 +175,8 @@ A: 理论上可以，只要该工具支持配置自定义 API Base URL。但本�
 
 <div align="center">
 
-**如果这个项目对你有帮助，请给个 ⭐️ Star 支持一下！**
+**如果这个项目对你有帮助，请给个 Star 支持一下！**
 
-Made with ❤️ for Claude Code users
+Made with heart for Claude Code users
 
 </div>
