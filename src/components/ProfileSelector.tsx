@@ -34,21 +34,21 @@ export function ProfileSelector({
   return (
     <Listbox value={activeProfile?.id || ''} onChange={onProfileChange}>
       <div className="relative">
-        <Listbox.Button className="relative w-full cursor-pointer rounded-lg bg-white dark:bg-gray-700 py-3 pl-4 pr-10 text-left border border-gray-300 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-all">
+        <Listbox.Button className="relative w-full cursor-pointer rounded-lg bg-white dark:bg-gray-700 py-2 pl-3 pr-9 text-left border border-gray-300 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-all">
           <span className="block truncate">
             {activeProfile ? (
               <div>
-                <div className="font-semibold text-gray-900 dark:text-white">{activeProfile.name}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                <div className="font-medium text-sm text-gray-900 dark:text-white leading-tight">{activeProfile.name}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-tight">
                   {extractProvider(activeProfile.apiBaseUrl)} · {activeProfile.overrideModel || '透传模式'}
                 </div>
               </div>
             ) : (
-              <span className="text-gray-500 dark:text-gray-400">未激活配置</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">未激活配置</span>
             )}
           </span>
-          <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-            <ChevronsUpDown className="h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+          <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5">
+            <ChevronsUpDown className="h-4 w-4 text-gray-400 dark:text-gray-500" aria-hidden="true" />
           </span>
         </Listbox.Button>
 
@@ -64,22 +64,22 @@ export function ProfileSelector({
                 key={profile.id}
                 value={profile.id}
                 className={({ active }) =>
-                  `relative cursor-pointer select-none py-3 pl-10 pr-4 ${
+                  `relative cursor-pointer select-none py-2 pl-9 pr-3 ${
                     active ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-900 dark:text-indigo-100' : 'text-gray-900 dark:text-gray-100'
                   }`
                 }
               >
                 {({ selected }) => (
                   <>
-                    <div className={`block ${selected ? 'font-semibold' : 'font-normal'}`}>
-                      <div className="text-sm">{profile.name}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    <div className={`block ${selected ? 'font-medium' : 'font-normal'}`}>
+                      <div className="text-sm leading-tight">{profile.name}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-tight">
                         {extractProvider(profile.apiBaseUrl)} · {profile.overrideModel || '透传模式'}
                       </div>
                     </div>
                     {selected && (
-                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400">
-                        <Check className="h-5 w-5" aria-hidden="true" />
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 text-indigo-600 dark:text-indigo-400">
+                        <Check className="h-4 w-4" aria-hidden="true" />
                       </span>
                     )}
                   </>
@@ -94,7 +94,7 @@ export function ProfileSelector({
                   e.preventDefault()
                   onAddProfile()
                 }}
-                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 <span>添加新配置</span>

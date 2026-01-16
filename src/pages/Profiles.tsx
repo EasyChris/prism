@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { Modal } from "@/components/Modal"
 import { ProfileForm } from "@/components/ProfileForm"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
+import { Edit2, Trash2, CheckCircle2, Circle } from "lucide-react"
 import * as api from "@/lib/api"
 
 type ModelMappingMode = "passthrough" | "override" | "map"
@@ -118,6 +119,46 @@ export function Profiles() {
     }
   }
 
+  // 从 API Base URL 提取 Provider 名称
+  const extractProvider = (apiBaseUrl: string): string => {
+    try {
+      const url = new URL(apiBaseUrl)
+      const hostname = url.hostname.toLowerCase()
+
+      if (hostname.includes('anthropic')) return 'Anthropic'
+      if (hostname.includes('openai')) return 'OpenAI'
+      if (hostname.includes('google')) return 'Google'
+      if (hostname.includes('azure')) return 'Azure'
+      if (hostname.includes('deepseek')) return 'DeepSeek'
+      if (hostname.includes('zhipu') || hostname.includes('glm')) return 'GLM'
+
+      // 返回域名的主要部分
+      const parts = hostname.split('.')
+      if (parts.length >= 2) {
+        return parts[parts.length - 2].charAt(0).toUpperCase() + parts[parts.length - 2].slice(1)
+      }
+
+      return hostname
+    } catch {
+      return 'Custom'
+    }
+  }
+
+  // 获取模型映射模式的显示文本
+  const getMappingModeText = (profile: Profile): string => {
+    switch (profile.modelMappingMode) {
+      case 'passthrough':
+        return '透传模式'
+      case 'override':
+        return `覆盖 → ${profile.overrideModel || '未设置'}`
+      case 'map':
+        const count = Object.keys(profile.modelMappings).length
+        return `映射模式 (${count} 条规则)`
+      default:
+        return '未知'
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -131,81 +172,90 @@ export function Profiles() {
         </button>
       </div>
 
-      {/* Profiles List */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                配置名称
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                API 地址
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                模型映射模式
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                状态
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                操作
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {profiles.map((profile) => (
-              <tr key={profile.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">{profile.name}</span>
-                    {profile.isActive && (
-                      <span className="ml-2 px-2 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 rounded">
-                        当前
+      {/* Profiles Grid - 卡片布局 */}
+      {profiles.length === 0 ? (
+        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600">
+          <p className="text-gray-500 dark:text-gray-400 mb-4">暂无配置</p>
+          <button
+            onClick={handleAddProfile}
+            className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
+          >
+            添加第一个配置
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {profiles.map((profile) => (
+            <div
+              key={profile.id}
+              className={`relative bg-white dark:bg-gray-800 rounded-lg border-2 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 ${
+                profile.isActive
+                  ? 'border-blue-500 dark:border-blue-400 shadow-md'
+                  : 'border-gray-200 dark:border-gray-700 shadow-sm'
+              }`}
+            >
+              {/* 卡片内容 - 紧凑布局 */}
+              <div className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white truncate mb-1">
+                      {profile.name}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs font-medium text-gray-600 dark:text-gray-400">
+                        {extractProvider(profile.apiBaseUrl)}
                       </span>
-                    )}
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {getMappingModeText(profile)}
+                      </span>
+                    </div>
                   </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                  {profile.apiBaseUrl}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                  {profile.modelMappingMode === "passthrough" && "透传"}
-                  {profile.modelMappingMode === "override" && "覆盖"}
-                  {profile.modelMappingMode === "map" && "映射"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <button
-                    onClick={() => handleToggleActive(profile)}
-                    disabled={profile.isActive}
-                    className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
-                      profile.isActive
-                        ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 cursor-default"
-                        : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-800 dark:hover:text-blue-400 cursor-pointer"
-                    }`}
-                  >
-                    {profile.isActive ? "激活" : "未激活"}
-                  </button>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button
-                    onClick={() => handleEditProfile(profile)}
-                    className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-3"
-                  >
-                    编辑
-                  </button>
-                  <button
-                    onClick={() => handleDeleteProfile(profile)}
-                    className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
-                  >
-                    删除
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                  {profile.isActive && (
+                    <span className="ml-2 flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 rounded-full flex-shrink-0">
+                      <CheckCircle2 size={12} />
+                      当前
+                    </span>
+                  )}
+                </div>
+
+                {/* 操作按钮 */}
+                <div className="flex items-center justify-between gap-2 pt-3 border-t border-gray-100 dark:border-gray-700">
+                  {!profile.isActive ? (
+                    <button
+                      onClick={() => handleToggleActive(profile)}
+                      className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                    >
+                      <Circle size={14} />
+                      激活
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-green-600 dark:text-green-400">
+                      <CheckCircle2 size={14} />
+                      已激活
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleEditProfile(profile)}
+                      className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                      title="编辑"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteProfile(profile)}
+                      className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                      title="删除"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Modal */}
       <Modal
