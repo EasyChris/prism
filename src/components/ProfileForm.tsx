@@ -78,7 +78,7 @@ export function ProfileForm({ profile, onSubmit, onCancel }: ProfileFormProps) {
           required
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder:text-gray-400"
           placeholder="例如：默认配置"
         />
       </div>
@@ -92,7 +92,7 @@ export function ProfileForm({ profile, onSubmit, onCancel }: ProfileFormProps) {
           required
           value={formData.apiBaseUrl}
           onChange={(e) => setFormData({ ...formData, apiBaseUrl: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder:text-gray-400"
           placeholder="https://api.anthropic.com"
         />
       </div>
@@ -106,7 +106,7 @@ export function ProfileForm({ profile, onSubmit, onCancel }: ProfileFormProps) {
           required
           value={formData.apiKey}
           onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder:text-gray-400"
           placeholder="sk-ant-..."
         />
       </div>
@@ -156,7 +156,7 @@ export function ProfileForm({ profile, onSubmit, onCancel }: ProfileFormProps) {
                 type="text"
                 value={formData.overrideModel || ""}
                 onChange={(e) => setFormData({ ...formData, overrideModel: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder:text-gray-400"
                 placeholder="例如：glm-4-plus 或 deepseek-chat"
                 required
               />
@@ -188,7 +188,7 @@ export function ProfileForm({ profile, onSubmit, onCancel }: ProfileFormProps) {
                   type="text"
                   value={mappingKey}
                   onChange={(e) => setMappingKey(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder:text-gray-400 text-sm"
                   placeholder="原始模型（如：claude-3-5-sonnet-20241022）"
                 />
                 <span className="flex items-center text-gray-400">→</span>
@@ -196,7 +196,7 @@ export function ProfileForm({ profile, onSubmit, onCancel }: ProfileFormProps) {
                   type="text"
                   value={mappingValue}
                   onChange={(e) => setMappingValue(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder:text-gray-400 text-sm"
                   placeholder="目标模型（如：glm-4-plus）"
                 />
                 <button
