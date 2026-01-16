@@ -116,13 +116,10 @@ pub async fn get_token_stats(time_range: &str) -> Result<Vec<TokenDataPoint>, St
 fn get_hourly_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, String> {
     // 获取本地时区今天的开始时间戳（毫秒）
     let now = Local::now();
-    let today_start = now
-        .date_naive()
-        .and_hms_opt(0, 0, 0)
-        .unwrap()
-        .and_local_timezone(Local)
+    let today_start = Local
+        .with_ymd_and_hms(now.year(), now.month(), now.day(), 0, 0, 0)
         .single()
-        .unwrap()
+        .ok_or_else(|| "Failed to create today start timestamp".to_string())?
         .timestamp_millis();
 
     // 初始化24小时的数据点
@@ -171,13 +168,10 @@ fn get_daily_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, S
     let now = Local::now();
 
     // 计算本周一的开始时间戳（本地时区）
-    let today_start = now
-        .date_naive()
-        .and_hms_opt(0, 0, 0)
-        .unwrap()
-        .and_local_timezone(Local)
+    let today_start = Local
+        .with_ymd_and_hms(now.year(), now.month(), now.day(), 0, 0, 0)
         .single()
-        .unwrap()
+        .ok_or_else(|| "Failed to create today start timestamp".to_string())?
         .timestamp_millis();
 
     // 计算距离周一的天数（0=周一, 6=周日）
@@ -232,13 +226,10 @@ fn get_weekly_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, 
     let now = Local::now();
 
     // 计算过去28天的开始时间戳（4周，本地时区）
-    let today_start = now
-        .date_naive()
-        .and_hms_opt(0, 0, 0)
-        .unwrap()
-        .and_local_timezone(Local)
+    let today_start = Local
+        .with_ymd_and_hms(now.year(), now.month(), now.day(), 0, 0, 0)
         .single()
-        .unwrap()
+        .ok_or_else(|| "Failed to create today start timestamp".to_string())?
         .timestamp_millis();
     let four_weeks_ago = today_start - (28 * 86400000);
 

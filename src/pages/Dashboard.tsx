@@ -318,9 +318,20 @@ export function Dashboard() {
             </div>
           ) : (
             <>
-              {/* Bars */}
-              <div className="flex items-end justify-between h-40 gap-1">
-                {currentData.map((data, index) => {
+              {/* Chart with Y-axis */}
+              <div className="flex gap-2">
+                {/* Y-axis labels */}
+                <div className="flex flex-col justify-between h-40 py-0.5">
+                  {[maxTokens, Math.floor(maxTokens * 0.75), Math.floor(maxTokens * 0.5), Math.floor(maxTokens * 0.25), 0].map((value, index) => (
+                    <div key={index} className="text-xs text-gray-500 dark:text-gray-400 text-right" style={{ minWidth: '50px' }}>
+                      {formatNumber(value)}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Bars */}
+                <div className="flex-1 flex items-end justify-between h-40 gap-1">
+                  {currentData.map((data, index) => {
                   const totalHeight = (data.tokens / maxTokens) * 100
                   const totalHeightPx = (totalHeight / 100) * 160 // 160px = h-40
                   const cacheTokens = data.cacheReadTokens || 0
@@ -361,10 +372,13 @@ export function Dashboard() {
                     </div>
                   )
                 })}
+                </div>
               </div>
 
               {/* Time axis labels - separate row */}
-              <div className="flex justify-between">
+              <div className="flex gap-2">
+                <div style={{ minWidth: '50px' }}></div>
+                <div className="flex-1 flex justify-between">
                 {currentData.map((data, index) => {
                   // 根据数据量决定显示间隔
                   const showLabel = timeRange === 'hour'
@@ -381,6 +395,7 @@ export function Dashboard() {
                     </div>
                   )
                 })}
+                </div>
               </div>
             </>
           )}
