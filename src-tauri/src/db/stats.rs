@@ -45,7 +45,7 @@ pub async fn get_dashboard_stats() -> Result<DashboardStats, String> {
                 r#"
                 SELECT
                     COUNT(*) as request_count,
-                    COALESCE(SUM(input_tokens + output_tokens), 0) as token_count
+                    COALESCE(SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens), 0) as token_count
                 FROM request_logs
                 WHERE timestamp >= ?1
                 "#,
@@ -64,7 +64,7 @@ pub async fn get_dashboard_stats() -> Result<DashboardStats, String> {
                 r#"
                 SELECT
                     COUNT(*) as request_count,
-                    COALESCE(SUM(input_tokens + output_tokens), 0) as token_count
+                    COALESCE(SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens), 0) as token_count
                 FROM request_logs
                 "#,
             )
@@ -137,7 +137,7 @@ fn get_hourly_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, 
             r#"
             SELECT
                 CAST((timestamp - ?1) / 3600000 AS INTEGER) as hour,
-                SUM(input_tokens + output_tokens) as tokens,
+                SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens) as tokens,
                 SUM(cache_read_input_tokens) as cache_read_tokens
             FROM request_logs
             WHERE timestamp >= ?1 AND timestamp < ?1 + 86400000
@@ -195,7 +195,7 @@ fn get_daily_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, S
             r#"
             SELECT
                 CAST((timestamp - ?1) / 86400000 AS INTEGER) as day,
-                SUM(input_tokens + output_tokens) as tokens,
+                SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens) as tokens,
                 SUM(cache_read_input_tokens) as cache_read_tokens
             FROM request_logs
             WHERE timestamp >= ?1 AND timestamp < ?1 + 604800000
@@ -221,19 +221,21 @@ fn get_daily_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, S
     Ok(data_points)
 }
 
-/// 获取按周统计的数据（本月4周）
+/// 获取按周统计的数据（最近4周）
 fn get_weekly_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, String> {
     let now = Local::now();
 
-    // 计算过去28天的开始时间戳（4周，本地时区）
-    let today_start = Local
-        .with_ymd_and_hms(now.year(), now.month(), now.day(), 0, 0, 0)
+    // 计算今天结束时间戳（本地时区）
+    let today_end = Local
+        .with_ymd_and_hms(now.year(), now.month(), now.day(), 23, 59, 59)
         .single()
-        .ok_or_else(|| "Failed to create today start timestamp".to_string())?
+        .ok_or_else(|| "Failed to create today end timestamp".to_string())?
         .timestamp_millis();
-    let four_weeks_ago = today_start - (28 * 86400000);
 
-    // 初始化4周的数据点
+    // 计算4周前的开始时间戳（28天前）
+    let four_weeks_ago = today_end - (28 * 86400000);
+
+    // 初始化4周的数据点（从旧到新）
     let mut data_points: Vec<TokenDataPoint> = (1..=4)
         .map(|week| TokenDataPoint {
             label: format!("第{}周", week),
@@ -242,30 +244,31 @@ fn get_weekly_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, 
         })
         .collect();
 
-    // 查询过去4周每周的 Token 使用量
+    // 查询最近4周每周的 Token 使用量
     let mut stmt = conn
         .prepare(
             r#"
             SELECT
                 CAST((timestamp - ?1) / 604800000 AS INTEGER) as week,
-                SUM(input_tokens + output_tokens) as tokens,
+                SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens) as tokens,
                 SUM(cache_read_input_tokens) as cache_read_tokens
             FROM request_logs
-            WHERE timestamp >= ?1 AND timestamp < ?1 + 2419200000
+            WHERE timestamp >= ?1 AND timestamp <= ?2
             GROUP BY week
             "#,
         )
         .map_err(|e| format!("Failed to prepare weekly stats: {}", e))?;
 
     let rows = stmt
-        .query_map([four_weeks_ago], |row| {
+        .query_map([four_weeks_ago, today_end], |row| {
             Ok((row.get::<_, i32>(0)?, row.get::<_, i32>(1)?, row.get::<_, i32>(2)?))
         })
         .map_err(|e| format!("Failed to query weekly stats: {}", e))?;
 
     for row in rows {
         let (week, tokens, cache_read_tokens) = row.map_err(|e| format!("Failed to read row: {}", e))?;
-        if week >= 0 && week < 4 {
+        // week 范围是 0-3，对应最近4周
+        if week >= 0 && week <= 3 {
             data_points[week as usize].tokens = tokens;
             data_points[week as usize].cache_read_tokens = cache_read_tokens;
         }
@@ -299,7 +302,7 @@ fn get_monthly_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>,
             r#"
             SELECT
                 CAST((timestamp - ?1) / 2592000000 AS INTEGER) as month,
-                SUM(input_tokens + output_tokens) as tokens,
+                SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens) as tokens,
                 SUM(cache_read_input_tokens) as cache_read_tokens
             FROM request_logs
             WHERE timestamp >= ?1

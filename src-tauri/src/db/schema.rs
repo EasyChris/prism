@@ -20,14 +20,10 @@ pub async fn init_database() -> Result<(), String> {
     let conn = rusqlite::Connection::open(&db_path)
         .map_err(|e| format!("Failed to open database: {}", e))?;
 
-    // 删除旧表（如果存在）
-    conn.execute("DROP TABLE IF EXISTS request_logs", [])
-        .map_err(|e| format!("Failed to drop old table: {}", e))?;
-
-    // 创建新的日志表
+    // 创建日志表（如果不存在）
     conn.execute(
         r#"
-        CREATE TABLE request_logs (
+        CREATE TABLE IF NOT EXISTS request_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             request_id TEXT,
             timestamp INTEGER NOT NULL,
