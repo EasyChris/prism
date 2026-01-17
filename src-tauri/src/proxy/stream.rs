@@ -99,7 +99,7 @@ pub(super) async fn handle_stream_response(
         token_stats: token_stats_clone,
     };
 
-    // 在流结束后保存日志
+    // 在流结束后更新日志（使用 UPDATE 而非 INSERT）
     let request_log_clone = request_log.clone();
     tokio::spawn(async move {
         // 等待一小段时间确保流已完成
@@ -113,13 +113,21 @@ pub(super) async fn handle_stream_response(
             log.cache_read_input_tokens = stats.cache_read_input_tokens;
             log.duration_ms = start_time.elapsed().as_millis() as i64;
 
-            log::info!(
-                "Stream completed - input_tokens: {}, output_tokens: {}, cache_creation: {}, cache_read: {}",
-                stats.input_tokens, stats.output_tokens, stats.cache_creation_input_tokens, stats.cache_read_input_tokens
-            );
+            // 输出流式响应的统计信息
+            let total_tokens = stats.input_tokens + stats.output_tokens;
+            log::info!("✅ Stream completed");
+            log::info!("📊 Stats: {} tokens (in: {}, out: {}) | {}ms",
+                total_tokens, stats.input_tokens, stats.output_tokens, log.duration_ms);
+
+            if stats.cache_creation_input_tokens > 0 || stats.cache_read_input_tokens > 0 {
+                log::info!("💾 Cache: creation: {}, read: {}",
+                    stats.cache_creation_input_tokens, stats.cache_read_input_tokens);
+            }
+            log::info!("{}\n", "=".repeat(60));
         }
 
-        crate::logger::save_log(log).await;
+        // 使用 UPDATE 更新已存在的日志记录
+        crate::logger::update_log(log).await;
     });
 
     // 立即返回流式响应

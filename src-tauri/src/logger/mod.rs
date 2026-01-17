@@ -139,6 +139,13 @@ pub async fn save_log(log: RequestLog) {
     }
 }
 
+// 更新日志到数据库（用于流式响应的 Token 统计更新）
+pub async fn update_log(log: RequestLog) {
+    if let Err(e) = crate::db::update_log_to_db(&log).await {
+        log::error!("Failed to update log to database: {}", e);
+    }
+}
+
 // 查询日志（从数据库）
 pub async fn get_logs(limit: usize, offset: usize) -> Vec<RequestLog> {
     match crate::db::get_logs_from_db(limit, offset).await {

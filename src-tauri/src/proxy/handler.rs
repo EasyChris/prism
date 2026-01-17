@@ -16,7 +16,7 @@ pub(super) async fn handle_messages(
     body: String,
 ) -> Result<Response, StatusCode> {
     let start_time = Instant::now();
-    log::info!("Received request to /v1/messages");
+    log::info!("\n{}\n🚀 New Request to /v1/messages\n{}", "=".repeat(60), "=".repeat(60));
 
     // API Key 鉴权检查
     {
@@ -56,7 +56,7 @@ pub(super) async fn handle_messages(
                 return Err(StatusCode::UNAUTHORIZED);
             }
 
-            log::info!("API key verified successfully");
+            log::debug!("API key verified successfully");
         }
     }
 
@@ -73,44 +73,77 @@ pub(super) async fn handle_messages(
         })?
     };
 
-    log::info!("Using profile: {} ({})", profile.name, profile.api_base_url);
+    log::info!("📋 Profile: {}", profile.name);
 
     // 解析请求体以获取模型信息并应用模型映射
-    let (original_model, mapped_model, modified_body) = if let Ok(mut json) = serde_json::from_str::<serde_json::Value>(&body) {
+    let (original_model, mapped_model, modified_body, user_prompt) = if let Ok(mut json) = serde_json::from_str::<serde_json::Value>(&body) {
         let original = json.get("model")
             .and_then(|m| m.as_str())
             .unwrap_or("unknown")
             .to_string();
+
+        // 提取用户 prompt（取最后一条用户消息）
+        let prompt = json.get("messages")
+            .and_then(|m| m.as_array())
+            .and_then(|arr| arr.iter().rev().find(|msg| {
+                msg.get("role").and_then(|r| r.as_str()) == Some("user")
+            }))
+            .and_then(|msg| msg.get("content"))
+            .and_then(|c| {
+                if let Some(s) = c.as_str() {
+                    Some(s.to_string())
+                } else if let Some(arr) = c.as_array() {
+                    arr.iter()
+                        .find(|item| item.get("type").and_then(|t| t.as_str()) == Some("text"))
+                        .and_then(|item| item.get("text"))
+                        .and_then(|t| t.as_str())
+                        .map(|s| s.to_string())
+                } else {
+                    None
+                }
+            })
+            .unwrap_or_else(|| "N/A".to_string());
 
         // 使用 Profile 的 resolve_model 方法进行模型映射
         let mapped = profile.resolve_model(&original);
 
         // 如果模型发生了映射，修改请求体中的 model 字段
         if original != mapped {
-            log::info!("Model mapping: {} -> {}", original, mapped);
             json["model"] = serde_json::Value::String(mapped.clone());
         }
 
         let new_body = serde_json::to_string(&json).unwrap_or(body.clone());
-        (original, mapped, new_body)
+        (original, mapped, new_body, prompt)
     } else {
         let default_model = "unknown".to_string();
-        (default_model.clone(), default_model, body.clone())
+        (default_model.clone(), default_model, body.clone(), "N/A".to_string())
     };
 
-    log::info!("Original model: {}", original_model);
-    log::info!("Mapped model: {}", mapped_model);
+    // 输出模型信息
+    if original_model != mapped_model {
+        log::info!("🤖 Model: {} → {}", original_model, mapped_model);
+    } else {
+        log::info!("🤖 Model: {}", original_model);
+    }
+
+    // 输出用户 prompt（截断显示）
+    let prompt_preview = if user_prompt.len() > 200 {
+        format!("{}...", &user_prompt[..200])
+    } else {
+        user_prompt.clone()
+    };
+    log::info!("💬 Prompt: {}", prompt_preview);
 
     // 计算请求体大小（在移动之前）
     let request_size = modified_body.len();
 
     // 检查是否是流式请求
     let is_stream = modified_body.contains("\"stream\":true") || modified_body.contains("\"stream\": true");
-    log::info!("Request is streaming: {}", is_stream);
+    log::debug!("Request is streaming: {}", is_stream);
 
     // 构建上游 API URL
     let upstream_url = format!("{}/v1/messages", profile.api_base_url);
-    log::info!("Forwarding to: {}", upstream_url);
+    log::debug!("Forwarding to: {}", upstream_url);
 
     // 创建 HTTP 客户端（设置 60 秒超时）
     // reqwest 默认启用所有解压功能（gzip, deflate, br, zstd）
@@ -158,18 +191,8 @@ pub(super) async fn handle_messages(
     request_headers.remove("x-api-key");  // 移除测试占位符
     request_headers.remove("content-length");  // reqwest 会自动计算
 
-    // 打印请求头用于调试
-    log::info!("Request headers:");
-    for (key, value) in request_headers.iter() {
-        if key == reqwest::header::AUTHORIZATION {
-            log::info!("  {}: Bearer ***", key);
-        } else if let Ok(v) = value.to_str() {
-            log::info!("  {}: {}", key, v);
-        }
-    }
-
     // 转发请求到上游 API（使用修改后的请求体）
-    log::info!("Sending request to upstream...");
+    log::debug!("Sending request to upstream...");
     let response = client
         .post(&upstream_url)
         .headers(request_headers)
@@ -188,7 +211,7 @@ pub(super) async fn handle_messages(
             StatusCode::BAD_GATEWAY
         })?;
 
-    log::info!("Received response from upstream");
+    log::debug!("Received response from upstream");
 
     let status = response.status();
 
@@ -206,7 +229,7 @@ pub(super) async fn handle_messages(
 
     // 如果是流式响应，使用流式处理
     if is_stream {
-        log::info!("Handling streaming response");
+        log::info!("⚡ Streaming response started...");
 
         // 创建日志记录（流式响应的 Token 统计会在流结束后更新）
         let mut request_log = RequestLog::new(
@@ -222,17 +245,18 @@ pub(super) async fn handle_messages(
         request_log.status_code = status.as_u16() as i32;
         request_log.is_stream = true;
 
-        // 先保存基础日志（Token 为 0）
+        // 先保存基础日志（Token 为 0），后续会通过 UPDATE 更新
         let log_clone = request_log.clone();
         tokio::spawn(async move {
             crate::logger::save_log(log_clone).await;
         });
 
+        // 传递 request_log 给 stream handler，它会在流结束后 UPDATE
         return handle_stream_response(response, request_log, start_time).await;
     }
 
     // 非流式响应，直接返回
-    log::info!("Reading response body...");
+    log::debug!("Reading response body...");
 
     // 先读取为字节，以便处理可能的编码问题
     let response_bytes = response.bytes().await.map_err(|e| {
@@ -240,45 +264,42 @@ pub(super) async fn handle_messages(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    log::info!("Response body length: {} bytes", response_bytes.len());
-    log::info!("Received response with status: {}", status);
+    log::debug!("Response body length: {} bytes", response_bytes.len());
 
     // 尝试将字节转换为 UTF-8 字符串
     let response_body = match String::from_utf8(response_bytes.to_vec()) {
-        Ok(text) => {
-            log::info!("Successfully decoded response as UTF-8");
-            text
-        }
+        Ok(text) => text,
         Err(e) => {
             log::warn!("Response is not valid UTF-8, attempting lossy conversion: {}", e);
-            // 使用 lossy 转换，替换无效字符
             String::from_utf8_lossy(&response_bytes).to_string()
         }
     };
 
-    // 打印响应体前 500 字符用于调试（安全地处理 UTF-8 边界）
-    let preview = if response_body.len() > 500 {
-        // 使用 char_indices 找到安全的切割点
-        response_body.char_indices()
-            .take(500)
-            .last()
-            .map(|(idx, _)| &response_body[..=idx])
-            .unwrap_or(&response_body)
-    } else {
-        &response_body
-    };
-    log::info!("Response body preview: {}", preview);
-
-    // 解析 Token 信息（兼容不同供应商的响应格式）
+    // 解析 Token 信息和响应内容（兼容不同供应商的响应格式）
     let (input_tokens, output_tokens) = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&response_body) {
-        log::info!("Successfully parsed JSON response");
+        // 提取响应内容
+        let response_text = json.get("content")
+            .and_then(|c| c.as_array())
+            .and_then(|arr| arr.first())
+            .and_then(|item| item.get("text"))
+            .and_then(|t| t.as_str())
+            .unwrap_or("");
+
+        // 输出响应内容（截断显示）
+        if !response_text.is_empty() {
+            let response_preview = if response_text.len() > 300 {
+                format!("{}...", &response_text[..300])
+            } else {
+                response_text.to_string()
+            };
+            log::info!("📝 Response: {}", response_preview);
+        }
 
         // 尝试多种可能的 token 字段路径（兼容不同供应商）
         let input = json.get("usage")
             .and_then(|u| u.get("input_tokens"))
             .and_then(|t| t.as_i64())
             .or_else(|| {
-                // 尝试其他可能的字段名
                 json.get("usage")
                     .and_then(|u| u.get("prompt_tokens"))
                     .and_then(|t| t.as_i64())
@@ -289,23 +310,25 @@ pub(super) async fn handle_messages(
             .and_then(|u| u.get("output_tokens"))
             .and_then(|t| t.as_i64())
             .or_else(|| {
-                // 尝试其他可能的字段名
                 json.get("usage")
                     .and_then(|u| u.get("completion_tokens"))
                     .and_then(|t| t.as_i64())
             })
             .unwrap_or(0) as i32;
 
-        log::info!("Parsed tokens - input: {}, output: {}", input, output);
         (input, output)
     } else {
-        log::warn!("Failed to parse response body as JSON, skipping token extraction");
-        log::warn!("This may be due to non-JSON response or unsupported format from provider");
+        log::warn!("Failed to parse response body as JSON");
         (0, 0)
     };
 
     // 计算耗时
     let duration_ms = start_time.elapsed().as_millis() as i64;
+
+    // 输出统计信息
+    log::info!("📊 Stats: {} tokens (in: {}, out: {}) | {}ms | {}",
+        input_tokens + output_tokens, input_tokens, output_tokens, duration_ms, status);
+    log::info!("{}\n", "=".repeat(60));
 
     // 记录日志（使用新的字段）
     let response_size = response_body.len();
@@ -330,9 +353,6 @@ pub(super) async fn handle_messages(
         crate::logger::save_log(request_log).await;
     });
 
-    log::info!("Sending response back to client...");
-
     let response = (status, response_headers, response_body).into_response();
-    log::info!("Response created successfully");
     Ok(response)
 }

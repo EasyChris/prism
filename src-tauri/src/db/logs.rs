@@ -55,6 +55,44 @@ pub async fn save_log_to_db(log: &RequestLog) -> Result<(), String> {
     Ok(())
 }
 
+/// 更新日志到数据库（用于流式响应的 Token 统计更新）
+pub async fn update_log_to_db(log: &RequestLog) -> Result<(), String> {
+    let db_path = get_db_path();
+    let log = log.clone(); // 克隆 log 以避免生命周期问题
+
+    tokio::task::spawn_blocking(move || {
+        let conn = rusqlite::Connection::open(&db_path)
+            .map_err(|e| format!("Failed to open database: {}", e))?;
+
+        conn.execute(
+            r#"
+            UPDATE request_logs SET
+                input_tokens = ?1,
+                output_tokens = ?2,
+                cache_creation_input_tokens = ?3,
+                cache_read_input_tokens = ?4,
+                duration_ms = ?5
+            WHERE request_id = ?6
+            "#,
+            rusqlite::params![
+                log.input_tokens,
+                log.output_tokens,
+                log.cache_creation_input_tokens,
+                log.cache_read_input_tokens,
+                log.duration_ms,
+                &log.request_id,
+            ],
+        )
+        .map_err(|e| format!("Failed to update log: {}", e))?;
+
+        Ok::<(), String>(())
+    })
+    .await
+    .map_err(|e| format!("Task join error: {}", e))??;
+
+    Ok(())
+}
+
 /// 从数据库查询日志
 pub async fn get_logs_from_db(limit: usize, offset: usize) -> Result<Vec<RequestLog>, String> {
     let db_path = get_db_path();
