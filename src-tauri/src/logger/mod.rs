@@ -89,7 +89,7 @@ impl RequestLog {
     ) -> Self {
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
-            .unwrap()
+            .expect("System time before UNIX EPOCH")
             .as_millis() as i64;
 
         // 生成唯一的请求 ID

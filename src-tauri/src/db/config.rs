@@ -15,7 +15,7 @@ pub async fn save_profile_to_db(profile: &Profile) -> Result<(), String> {
 
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
-            .unwrap()
+            .map_err(|e| format!("Failed to get timestamp: {}", e))?
             .as_secs() as i64;
 
         // 插入或更新 profile
@@ -215,7 +215,7 @@ pub async fn save_app_config(key: &str, value: &str) -> Result<(), String> {
 
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
-            .unwrap()
+            .map_err(|e| format!("Failed to get timestamp: {}", e))?
             .as_secs() as i64;
 
         conn.execute(

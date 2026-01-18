@@ -1,23 +1,6 @@
 import { useState } from "react"
 import { Eye, EyeOff, AlertCircle } from "lucide-react"
-
-type ModelMappingMode = "passthrough" | "override" | "map"
-
-interface MappingRule {
-  pattern: string
-  target: string
-  useRegex: boolean
-}
-
-interface Profile {
-  id: string
-  name: string
-  apiBaseUrl: string
-  apiKey: string
-  modelMappingMode: ModelMappingMode
-  overrideModel?: string
-  modelMappings: MappingRule[]
-}
+import type { Profile, MappingRule } from "@/lib/api"
 
 interface ProfileFormProps {
   profile?: Profile
@@ -30,9 +13,9 @@ export function ProfileForm({ profile, onSubmit, onCancel }: ProfileFormProps) {
     name: profile?.name || "",
     apiBaseUrl: profile?.apiBaseUrl || "https://api.anthropic.com",
     apiKey: profile?.apiKey || "",
-    modelMappingMode: profile?.modelMappingMode || "passthrough" as ModelMappingMode,
+    modelMappingMode: profile?.modelMappingMode || "passthrough",
     overrideModel: profile?.overrideModel || "",
-    modelMappings: profile?.modelMappings || [] as MappingRule[],
+    modelMappings: profile?.modelMappings || [],
   })
 
   // UI 状态

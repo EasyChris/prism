@@ -4,19 +4,7 @@ import { ProfileForm } from "@/components/ProfileForm"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { Edit2, Trash2, CheckCircle2, Circle } from "lucide-react"
 import * as api from "@/lib/api"
-
-type ModelMappingMode = "passthrough" | "override" | "map"
-
-interface Profile {
-  id: string
-  name: string
-  apiBaseUrl: string
-  apiKey: string
-  isActive: boolean
-  modelMappingMode: ModelMappingMode
-  overrideModel?: string
-  modelMappings: Record<string, string>
-}
+import type { Profile } from "@/lib/api"
 
 export function Profiles() {
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -152,7 +140,7 @@ export function Profiles() {
       case 'override':
         return `覆盖 → ${profile.overrideModel || '未设置'}`
       case 'map':
-        const count = Object.keys(profile.modelMappings).length
+        const count = profile.modelMappings.length
         return `映射模式 (${count} 条规则)`
       default:
         return '未知'

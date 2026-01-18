@@ -4,6 +4,12 @@ import { invoke } from "@tauri-apps/api/core"
 
 export type ModelMappingMode = "passthrough" | "override" | "map"
 
+export interface MappingRule {
+  pattern: string
+  target: string
+  useRegex: boolean
+}
+
 export interface Profile {
   id: string
   name: string
@@ -12,7 +18,7 @@ export interface Profile {
   isActive: boolean
   modelMappingMode: ModelMappingMode
   overrideModel?: string
-  modelMappings: Record<string, string>
+  modelMappings: MappingRule[]
 }
 
 // 获取所有配置

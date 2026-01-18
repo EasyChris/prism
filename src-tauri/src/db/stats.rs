@@ -33,10 +33,10 @@ pub async fn get_dashboard_stats() -> Result<DashboardStats, String> {
         let today_start = now
             .date_naive()
             .and_hms_opt(0, 0, 0)
-            .unwrap()
+            .ok_or_else(|| "Failed to create today start time".to_string())?
             .and_local_timezone(Local)
             .single()
-            .unwrap()
+            .ok_or_else(|| "Failed to convert to local timezone".to_string())?
             .timestamp_millis();
 
         // 查询今日请求数和 Token 使用量
