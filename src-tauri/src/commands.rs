@@ -1,8 +1,7 @@
 // Tauri 命令：配置管理 API
 
-use crate::config::{ConfigManager, ModelMappingMode, Profile};
+use crate::config::{ConfigManager, MappingRule, ModelMappingMode, Profile};
 use crate::logger::RequestLog;
-use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use tauri::{Manager, State};
 
@@ -18,7 +17,7 @@ pub struct ProfileDto {
     pub is_active: bool,
     pub model_mapping_mode: ModelMappingMode,
     pub override_model: Option<String>,
-    pub model_mappings: HashMap<String, String>,
+    pub model_mappings: Vec<MappingRule>,
 }
 
 impl From<&Profile> for ProfileDto {
@@ -62,7 +61,7 @@ pub struct CreateProfileDto {
     pub api_key: String,
     pub model_mapping_mode: ModelMappingMode,
     pub override_model: Option<String>,
-    pub model_mappings: HashMap<String, String>,
+    pub model_mappings: Vec<MappingRule>,
 }
 
 #[tauri::command]
@@ -83,11 +82,14 @@ pub fn create_profile(
     new_profile.override_model = profile.override_model;
     new_profile.model_mappings = profile.model_mappings;
 
-    let profile_id = manager.create_profile(new_profile).map_err(|e| e.to_string())?;
+    let profile_id = manager.create_profile(new_profile.clone()).map_err(|e| e.to_string())?;
 
-    // 保存到文件
-    let config_path = crate::config::get_config_path();
-    manager.save_to_file(&config_path).map_err(|e| e.to_string())?;
+    // 异步保存到数据库
+    tauri::async_runtime::spawn(async move {
+        if let Err(e) = crate::db::save_profile_to_db(&new_profile).await {
+            log::error!("Failed to save profile to database: {}", e);
+        }
+    });
 
     Ok(profile_id)
 }
@@ -116,11 +118,14 @@ pub fn update_profile(
         model_mappings: profile.model_mappings,
     };
 
-    manager.update_profile(&id, updated_profile).map_err(|e| e.to_string())?;
+    manager.update_profile(&id, updated_profile.clone()).map_err(|e| e.to_string())?;
 
-    // 保存到文件
-    let config_path = crate::config::get_config_path();
-    manager.save_to_file(&config_path).map_err(|e| e.to_string())?;
+    // 异步保存到数据库
+    tauri::async_runtime::spawn(async move {
+        if let Err(e) = crate::db::save_profile_to_db(&updated_profile).await {
+            log::error!("Failed to save profile to database: {}", e);
+        }
+    });
 
     Ok(())
 }
@@ -131,9 +136,13 @@ pub fn delete_profile(config: State<SharedConfigManager>, id: String) -> Result<
 
     manager.delete_profile(&id).map_err(|e| e.to_string())?;
 
-    // 保存到文件
-    let config_path = crate::config::get_config_path();
-    manager.save_to_file(&config_path).map_err(|e| e.to_string())?;
+    // 异步从数据库删除
+    let id_clone = id.clone();
+    tauri::async_runtime::spawn(async move {
+        if let Err(e) = crate::db::delete_profile_from_db(&id_clone).await {
+            log::error!("Failed to delete profile from database: {}", e);
+        }
+    });
 
     Ok(())
 }
@@ -144,9 +153,15 @@ pub fn activate_profile(config: State<SharedConfigManager>, id: String) -> Resul
 
     manager.activate_profile(&id).map_err(|e| e.to_string())?;
 
-    // 保存到文件
-    let config_path = crate::config::get_config_path();
-    manager.save_to_file(&config_path).map_err(|e| e.to_string())?;
+    // 异步保存所有 profiles 到数据库（因为需要更新所有的 is_active 状态）
+    let profiles: Vec<_> = manager.list_profiles().iter().map(|p| (*p).clone()).collect();
+    tauri::async_runtime::spawn(async move {
+        for profile in profiles {
+            if let Err(e) = crate::db::save_profile_to_db(&profile).await {
+                log::error!("Failed to save profile to database: {}", e);
+            }
+        }
+    });
 
     log::info!("Profile activated: {}", id);
 
@@ -275,9 +290,13 @@ pub fn refresh_proxy_api_key(config: State<SharedConfigManager>) -> Result<Strin
     let mut manager = config.write().map_err(|e| e.to_string())?;
     let new_key = manager.refresh_api_key();
 
-    // 保存到文件
-    let config_path = crate::config::get_config_path();
-    manager.save_to_file(&config_path).map_err(|e| e.to_string())?;
+    // 异步保存到数据库
+    let key_clone = new_key.clone();
+    tauri::async_runtime::spawn(async move {
+        if let Err(e) = crate::db::save_app_config("proxy_api_key", &key_clone).await {
+            log::error!("Failed to save proxy API key to database: {}", e);
+        }
+    });
 
     log::info!("Proxy API key refreshed");
     Ok(new_key)
@@ -294,9 +313,12 @@ pub fn set_auth_enabled(config: State<SharedConfigManager>, enabled: bool) -> Re
     let mut manager = config.write().map_err(|e| e.to_string())?;
     manager.set_auth_enabled(enabled);
 
-    // 保存到文件
-    let config_path = crate::config::get_config_path();
-    manager.save_to_file(&config_path).map_err(|e| e.to_string())?;
+    // 异步保存到数据库
+    tauri::async_runtime::spawn(async move {
+        if let Err(e) = crate::db::save_app_config("enable_auth", &enabled.to_string()).await {
+            log::error!("Failed to save auth enabled to database: {}", e);
+        }
+    });
 
     log::info!("Auth enabled set to: {}", enabled);
     Ok(())

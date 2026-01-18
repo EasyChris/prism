@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
+use regex;
 
 /// 全局配置管理器
 pub type SharedConfigManager = Arc<RwLock<ConfigManager>>;
@@ -19,9 +20,39 @@ pub enum ModelMappingMode {
     Map,
 }
 
+/// 映射规则
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MappingRule {
+    /// 匹配模式（可以是精确字符串或正则表达式）
+    pub pattern: String,
+    /// 目标模型
+    pub target: String,
+    /// 是否使用正则表达式匹配
+    #[serde(default)]
+    pub use_regex: bool,
+}
+
 impl Default for ModelMappingMode {
     fn default() -> Self {
         ModelMappingMode::Passthrough
+    }
+}
+
+impl ModelMappingMode {
+    pub fn as_str(&self) -> &str {
+        match self {
+            ModelMappingMode::Passthrough => "passthrough",
+            ModelMappingMode::Override => "override",
+            ModelMappingMode::Map => "map",
+        }
+    }
+
+    pub fn from_str(s: &str) -> Self {
+        match s {
+            "override" => ModelMappingMode::Override,
+            "map" => ModelMappingMode::Map,
+            _ => ModelMappingMode::Passthrough,
+        }
     }
 }
 
@@ -45,9 +76,9 @@ pub struct Profile {
     /// 覆盖模式使用的目标模型
     #[serde(default)]
     pub override_model: Option<String>,
-    /// 映射模式使用的映射规则表
+    /// 映射模式使用的映射规则列表
     #[serde(default)]
-    pub model_mappings: HashMap<String, String>,
+    pub model_mappings: Vec<MappingRule>,
 }
 
 impl Profile {
@@ -60,7 +91,7 @@ impl Profile {
             is_active: false,
             model_mapping_mode: ModelMappingMode::Passthrough,
             override_model: None,
-            model_mappings: HashMap::new(),
+            model_mappings: Vec::new(),
         }
     }
 
@@ -78,11 +109,26 @@ impl Profile {
                     .unwrap_or_else(|| original_model.to_string())
             }
             ModelMappingMode::Map => {
-                // 映射模式：查找映射表，如果未找到则回退到原始模型
-                self.model_mappings
-                    .get(original_model)
-                    .cloned()
-                    .unwrap_or_else(|| original_model.to_string())
+                // 映射模式：按顺序遍历规则列表
+                for rule in &self.model_mappings {
+                    if rule.use_regex {
+                        // 正则匹配模式
+                        if let Ok(re) = regex::Regex::new(&rule.pattern) {
+                            if re.is_match(original_model) {
+                                return rule.target.clone();
+                            }
+                        } else {
+                            log::warn!("Invalid regex pattern: {}", rule.pattern);
+                        }
+                    } else {
+                        // 精确匹配模式
+                        if rule.pattern == original_model {
+                            return rule.target.clone();
+                        }
+                    }
+                }
+                // 未找到匹配规则，回退到原始模型
+                original_model.to_string()
             }
         }
     }
@@ -220,6 +266,44 @@ impl ConfigManager {
             .map_err(|e| format!("Failed to parse config: {}", e))?;
 
         Ok(config)
+    }
+
+    /// 从数据库加载配置
+    pub async fn load_from_db() -> Result<Self, String> {
+        let profiles = crate::db::load_profiles_from_db().await?;
+
+        let mut profiles_map = HashMap::new();
+        for profile in profiles {
+            profiles_map.insert(profile.id.clone(), profile);
+        }
+
+        let proxy_api_key = crate::db::load_app_config("proxy_api_key").await?;
+        let enable_auth = crate::db::load_app_config("enable_auth")
+            .await?
+            .map(|v| v == "true")
+            .unwrap_or(false);
+
+        Ok(Self {
+            profiles: profiles_map,
+            proxy_api_key,
+            enable_auth,
+        })
+    }
+
+    /// 保存所有配置到数据库
+    pub async fn save_to_db(&self) -> Result<(), String> {
+        // 保存所有 profiles
+        for profile in self.profiles.values() {
+            crate::db::save_profile_to_db(profile).await?;
+        }
+
+        // 保存应用配置
+        if let Some(key) = &self.proxy_api_key {
+            crate::db::save_app_config("proxy_api_key", key).await?;
+        }
+        crate::db::save_app_config("enable_auth", &self.enable_auth.to_string()).await?;
+
+        Ok(())
     }
 
     /// 激活配置（确保只有一个配置处于激活状态）

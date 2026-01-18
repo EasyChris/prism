@@ -69,6 +69,55 @@ pub async fn init_database() -> Result<(), String> {
     )
     .map_err(|e| format!("Failed to create index: {}", e))?;
 
+    // 创建配置表（Profiles）
+    conn.execute(
+        r#"
+        CREATE TABLE IF NOT EXISTS profiles (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            api_base_url TEXT NOT NULL,
+            api_key TEXT NOT NULL,
+            is_active INTEGER NOT NULL DEFAULT 0,
+            model_mapping_mode TEXT NOT NULL DEFAULT 'passthrough',
+            override_model TEXT,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+        )
+        "#,
+        [],
+    )
+    .map_err(|e| format!("Failed to create profiles table: {}", e))?;
+
+    // 创建模型映射规则表
+    conn.execute(
+        r#"
+        CREATE TABLE IF NOT EXISTS model_mappings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            profile_id TEXT NOT NULL,
+            pattern TEXT NOT NULL,
+            target TEXT NOT NULL,
+            use_regex INTEGER NOT NULL DEFAULT 0,
+            rule_order INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE
+        )
+        "#,
+        [],
+    )
+    .map_err(|e| format!("Failed to create model_mappings table: {}", e))?;
+
+    // 创建应用配置表（存储全局配置）
+    conn.execute(
+        r#"
+        CREATE TABLE IF NOT EXISTS app_config (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL,
+            updated_at INTEGER NOT NULL
+        )
+        "#,
+        [],
+    )
+    .map_err(|e| format!("Failed to create app_config table: {}", e))?;
+
     log::info!("Database initialized successfully");
     Ok(())
 }

@@ -30,38 +30,43 @@ pub fn run() {
         }
       });
 
-      // 加载配置
-      let config_path = config::get_config_path();
-      let config_manager = if config_path.exists() {
-        config::ConfigManager::load_from_file(&config_path)
-          .unwrap_or_else(|e| {
-            log::warn!("Failed to load config: {}, using default", e);
-            config::ConfigManager::new()
-          })
-      } else {
-        log::info!("Config file not found, creating default config");
-        let mut manager = config::ConfigManager::new();
+      // 加载配置（优先从数据库加载，如果失败则尝试从 JSON 文件迁移）
+      let config_manager = tauri::async_runtime::block_on(async {
+        // 尝试从数据库加载
+        match config::ConfigManager::load_from_db().await {
+          Ok(manager) => {
+            log::info!("Config loaded from database successfully");
+            manager
+          }
+          Err(e) => {
+            log::warn!("Failed to load config from database: {}", e);
 
-        // 创建默认配置
-        let default_profile = config::Profile::new(
-          "Default".to_string(),
-          "https://api.anthropic.com".to_string(),
-          "".to_string(),
-        );
-
-        if let Ok(profile_id) = manager.create_profile(default_profile) {
-          // 激活默认配置
-          let _ = manager.activate_profile(&profile_id);
-          log::info!("Default profile created and activated");
+            // 尝试从 JSON 文件迁移
+            let config_path = config::get_config_path();
+            if config_path.exists() {
+              log::info!("Attempting to migrate config from JSON file");
+              match config::ConfigManager::load_from_file(&config_path) {
+                Ok(manager) => {
+                  // 迁移到数据库
+                  if let Err(e) = manager.save_to_db().await {
+                    log::error!("Failed to migrate config to database: {}", e);
+                  } else {
+                    log::info!("Config migrated to database successfully");
+                  }
+                  manager
+                }
+                Err(e) => {
+                  log::warn!("Failed to load config from file: {}", e);
+                  config::ConfigManager::new()
+                }
+              }
+            } else {
+              log::info!("No existing config found, creating default");
+              config::ConfigManager::new()
+            }
+          }
         }
-
-        // 保存配置到文件
-        if let Err(e) = manager.save_to_file(&config_path) {
-          log::warn!("Failed to save default config: {}", e);
-        }
-
-        manager
-      };
+      });
 
       let shared_config = Arc::new(RwLock::new(config_manager));
 

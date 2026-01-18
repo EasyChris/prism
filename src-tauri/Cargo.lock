@@ -124,6 +124,7 @@ dependencies = [
  "lazy_static",
  "log",
  "rand 0.8.5",
+ "regex",
  "reqwest",
  "rusqlite",
  "serde",

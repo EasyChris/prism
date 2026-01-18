@@ -3,6 +3,12 @@ import { Eye, EyeOff, AlertCircle } from "lucide-react"
 
 type ModelMappingMode = "passthrough" | "override" | "map"
 
+interface MappingRule {
+  pattern: string
+  target: string
+  useRegex: boolean
+}
+
 interface Profile {
   id: string
   name: string
@@ -10,7 +16,7 @@ interface Profile {
   apiKey: string
   modelMappingMode: ModelMappingMode
   overrideModel?: string
-  modelMappings: Record<string, string>
+  modelMappings: MappingRule[]
 }
 
 interface ProfileFormProps {
@@ -26,7 +32,7 @@ export function ProfileForm({ profile, onSubmit, onCancel }: ProfileFormProps) {
     apiKey: profile?.apiKey || "",
     modelMappingMode: profile?.modelMappingMode || "passthrough" as ModelMappingMode,
     overrideModel: profile?.overrideModel || "",
-    modelMappings: profile?.modelMappings || {},
+    modelMappings: profile?.modelMappings || [] as MappingRule[],
   })
 
   // UI 状态
@@ -34,28 +40,49 @@ export function ProfileForm({ profile, onSubmit, onCancel }: ProfileFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   // 用于 Map 模式的映射规则编辑
-  const [mappingKey, setMappingKey] = useState("")
-  const [mappingValue, setMappingValue] = useState("")
+  const [mappingPattern, setMappingPattern] = useState("")
+  const [mappingTarget, setMappingTarget] = useState("")
+  const [useRegex, setUseRegex] = useState(false)
+
+  // 正则表达式验证
+  const validateRegex = (pattern: string): boolean => {
+    try {
+      new RegExp(pattern)
+      return true
+    } catch {
+      return false
+    }
+  }
 
   // 添加映射规则
   const handleAddMapping = () => {
-    if (mappingKey && mappingValue) {
+    if (mappingPattern && mappingTarget) {
+      // 如果启用正则，验证正则表达式
+      if (useRegex && !validateRegex(mappingPattern)) {
+        setErrors({ ...errors, mappingPattern: "正则表达式语法错误" })
+        return
+      }
+
+      const newRule: MappingRule = {
+        pattern: mappingPattern,
+        target: mappingTarget,
+        useRegex: useRegex,
+      }
+
       setFormData({
         ...formData,
-        modelMappings: {
-          ...formData.modelMappings,
-          [mappingKey]: mappingValue,
-        },
+        modelMappings: [...formData.modelMappings, newRule],
       })
-      setMappingKey("")
-      setMappingValue("")
+      setMappingPattern("")
+      setMappingTarget("")
+      setUseRegex(false)
+      setErrors({ ...errors, mappingPattern: "" })
     }
   }
 
   // 删除映射规则
-  const handleRemoveMapping = (key: string) => {
-    const newMappings = { ...formData.modelMappings }
-    delete newMappings[key]
+  const handleRemoveMapping = (index: number) => {
+    const newMappings = formData.modelMappings.filter((_, i) => i !== index)
     setFormData({ ...formData, modelMappings: newMappings })
   }
 
@@ -241,45 +268,89 @@ export function ProfileForm({ profile, onSubmit, onCancel }: ProfileFormProps) {
               </div>
 
               {/* 添加映射规则 */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={mappingKey}
-                  onChange={(e) => setMappingKey(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm transition-colors"
-                  placeholder="原始模型（如：claude-3-5-sonnet-20241022）"
-                />
-                <span className="flex items-center text-gray-400 dark:text-gray-500">→</span>
-                <input
-                  type="text"
-                  value={mappingValue}
-                  onChange={(e) => setMappingValue(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm transition-colors"
-                  placeholder="目标模型（如：glm-4-plus）"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddMapping}
-                  className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 text-sm transition-colors"
-                >
-                  添加
-                </button>
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={mappingPattern}
+                    onChange={(e) => {
+                      setMappingPattern(e.target.value)
+                      if (errors.mappingPattern) {
+                        setErrors({ ...errors, mappingPattern: "" })
+                      }
+                    }}
+                    className={`flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm transition-colors ${
+                      errors.mappingPattern
+                        ? "border-red-300 dark:border-red-700 focus:ring-red-500"
+                        : "border-gray-300 dark:border-gray-600 focus:ring-blue-500 dark:focus:ring-blue-400"
+                    }`}
+                    placeholder={useRegex ? "claude-.*-opus.* (正则表达式)" : "claude-3-5-sonnet-20241022"}
+                  />
+                  <span className="flex items-center text-gray-400 dark:text-gray-500">→</span>
+                  <input
+                    type="text"
+                    value={mappingTarget}
+                    onChange={(e) => setMappingTarget(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm transition-colors"
+                    placeholder="glm-4-plus"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddMapping}
+                    className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 text-sm transition-colors"
+                  >
+                    添加
+                  </button>
+                </div>
+
+                {/* 正则匹配选项 */}
+                <div className="flex items-center gap-2 pl-1">
+                  <input
+                    type="checkbox"
+                    id="useRegex"
+                    checked={useRegex}
+                    onChange={(e) => setUseRegex(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  />
+                  <label htmlFor="useRegex" className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                    使用正则表达式匹配
+                  </label>
+                  {useRegex && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      (如: claude-.*-opus.* 匹配所有包含 opus 的模型)
+                    </span>
+                  )}
+                </div>
+
+                {/* 错误提示 */}
+                {errors.mappingPattern && (
+                  <div className="flex items-center gap-1 text-sm text-red-600 dark:text-red-400">
+                    <AlertCircle size={16} />
+                    <span>{errors.mappingPattern}</span>
+                  </div>
+                )}
               </div>
 
               {/* 显示已有的映射规则 */}
-              {Object.keys(formData.modelMappings).length > 0 && (
+              {formData.modelMappings.length > 0 && (
                 <div className="space-y-2">
                   <div className="text-sm font-medium text-gray-700 dark:text-gray-300">映射规则：</div>
-                  {Object.entries(formData.modelMappings).map(([key, value]) => (
-                    <div key={key} className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-                      <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">
-                        <span className="font-mono">{key}</span>
-                        <span className="text-gray-400 dark:text-gray-500 mx-2">→</span>
-                        <span className="font-mono">{value}</span>
-                      </span>
+                  {formData.modelMappings.map((rule, index) => (
+                    <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                          <span className="text-lg">{rule.useRegex ? "🔍" : "📌"}</span>
+                          <span className="font-mono">{rule.pattern}</span>
+                          <span className="text-gray-400 dark:text-gray-500">→</span>
+                          <span className="font-mono">{rule.target}</span>
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-7">
+                          {rule.useRegex ? "正则匹配" : "精确匹配"}
+                        </div>
+                      </div>
                       <button
                         type="button"
-                        onClick={() => handleRemoveMapping(key)}
+                        onClick={() => handleRemoveMapping(index)}
                         className="px-3 py-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-sm transition-colors"
                       >
                         删除
