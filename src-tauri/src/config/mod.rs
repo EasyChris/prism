@@ -283,6 +283,20 @@ impl ConfigManager {
             .map(|v| v == "true")
             .unwrap_or(false);
 
+        // 如果 proxy_api_key 不存在，自动生成一个
+        let proxy_api_key = match proxy_api_key {
+            Some(key) => Some(key),
+            None => {
+                let new_key = Self::generate_api_key();
+                log::info!("Generated new proxy API key on first initialization");
+                // 保存到数据库
+                if let Err(e) = crate::db::save_app_config("proxy_api_key", &new_key).await {
+                    log::error!("Failed to save generated proxy API key: {}", e);
+                }
+                Some(new_key)
+            }
+        };
+
         Ok(Self {
             profiles: profiles_map,
             proxy_api_key,
