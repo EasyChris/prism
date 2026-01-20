@@ -287,7 +287,12 @@ export function Dashboard() {
 
       {/* Token Usage Chart and Profile Ranking - Side by Side */}
       <div className="grid grid-cols-2 gap-3">
-        {/* Left: Token Usage Chart */}
+        {/* Left: Profile Ranking */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
+          <ProfileRanking timeRange={timeRange} limit={5} />
+        </div>
+
+        {/* Right: Token Usage Chart */}
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Token 使用量</h3>
@@ -427,11 +432,6 @@ export function Dashboard() {
             )}
           </div>
         </div>
-        </div>
-
-        {/* Right: Profile Ranking */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
-          <ProfileRanking timeRange={timeRange} limit={10} />
         </div>
       </div>
 

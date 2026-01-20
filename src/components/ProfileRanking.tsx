@@ -47,9 +47,9 @@ export function ProfileRanking({ timeRange, limit = 10, className = "" }: Profil
       case 1:
         return "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700"
       case 2:
-        return "bg-gray-100 text-gray-700 border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600"
+        return "bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600"
       case 3:
-        return "bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-700"
+        return "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/20 dark:text-amber-500 dark:border-amber-800"
       default:
         return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-700"
     }
@@ -61,9 +61,9 @@ export function ProfileRanking({ timeRange, limit = 10, className = "" }: Profil
       case 1:
         return "bg-gradient-to-r from-amber-400 to-amber-500 dark:from-amber-500 dark:to-amber-600"
       case 2:
-        return "bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-500 dark:to-gray-600"
+        return "bg-gradient-to-r from-slate-400 to-slate-500 dark:from-slate-500 dark:to-slate-600"
       case 3:
-        return "bg-gradient-to-r from-orange-400 to-orange-500 dark:from-orange-500 dark:to-orange-600"
+        return "bg-gradient-to-r from-amber-300 to-amber-400 dark:from-amber-600 dark:to-amber-700"
       default:
         return "bg-gradient-to-r from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600"
     }
@@ -83,55 +83,88 @@ export function ProfileRanking({ timeRange, limit = 10, className = "" }: Profil
     }
   }
 
+  // 获取卡片样式（为前三名添加特殊样式）
+  const getCardStyle = (rank: number) => {
+    if (rank <= 3) {
+      return "bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-850 rounded-lg p-2 shadow-sm border border-gray-200 dark:border-gray-700"
+    }
+    return ""
+  }
+
   return (
     <div className={className}>
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">配置消耗排名</h3>
+      <style>{`
+        @keyframes slideIn {
+          from {
+            width: 0;
+          }
+          to {
+            width: var(--target-width);
+          }
+        }
+      `}</style>
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">配置消耗排名</h3>
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-40">
-          <div className="text-gray-500 dark:text-gray-400 text-sm">加载中...</div>
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  <div className="h-3 w-28 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                </div>
+                <div className="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              </div>
+              <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+            </div>
+          ))}
         </div>
       ) : rankings.length === 0 ? (
-        <div className="flex items-center justify-center h-40">
-          <div className="text-gray-400 dark:text-gray-500 text-sm">暂无数据</div>
+        <div className="flex flex-col items-center justify-center h-32 text-center">
+          <div className="text-3xl mb-1.5">📊</div>
+          <div className="text-gray-500 dark:text-gray-400 text-xs font-medium">暂无消耗数据</div>
+          <div className="text-gray-400 dark:text-gray-500 text-[10px] mt-0.5">开始使用配置后将显示排名</div>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {rankings.map((profile) => (
             <div
               key={profile.profileId}
-              className="group"
+              className={`group ${getCardStyle(profile.rank)}`}
             >
               {/* 排名和配置名称 */}
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1.5">
                   {/* 排名徽章 */}
                   <div
-                    className={`flex items-center justify-center w-8 h-6 rounded text-xs font-bold border ${getRankBadgeStyle(profile.rank)}`}
+                    className={`flex items-center justify-center w-7 h-5 rounded text-xs font-bold border ${getRankBadgeStyle(profile.rank)}`}
                   >
                     {getRankIcon(profile.rank) || profile.rank}
                   </div>
                   {/* 配置名称 */}
-                  <span className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[200px]">
+                  <span className="text-xs font-medium text-gray-900 dark:text-white truncate max-w-[140px]">
                     {profile.profileName}
                   </span>
                 </div>
                 {/* Token 数量和百分比 */}
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-semibold text-gray-900 dark:text-white">
                     {formatNumber(profile.totalTokens)}
                   </span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                  <span className="text-[10px] text-gray-500 dark:text-gray-400">
                     ({profile.percentage.toFixed(1)}%)
                   </span>
                 </div>
               </div>
 
               {/* 进度条 */}
-              <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
                 <div
-                  className={`h-full transition-all duration-300 ${getProgressBarColor(profile.rank)}`}
-                  style={{ width: `${profile.percentage}%` }}
+                  className={`h-full transition-all duration-700 ease-out ${getProgressBarColor(profile.rank)}`}
+                  style={{
+                    width: `${profile.percentage}%`
+                  }}
                 />
               </div>
             </div>
