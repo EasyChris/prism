@@ -3,7 +3,7 @@
 use crate::db::schema::get_db_path;
 use super::time_range::{get_today_start, get_today_end, get_year_start};
 use super::types::TokenDataPoint;
-use chrono::{Datelike, Local, TimeZone};
+use chrono::{Datelike, Local, TimeZone, Timelike};
 
 /// 获取 Token 使用量统计数据（按时间范围）
 pub async fn get_token_stats(time_range: &str) -> Result<Vec<TokenDataPoint>, String> {
@@ -28,20 +28,42 @@ pub async fn get_token_stats(time_range: &str) -> Result<Vec<TokenDataPoint>, St
     Ok(data_points)
 }
 
-/// 获取按小时统计的数据（今天24小时）
+/// 获取按小时统计的数据（当前时间往前5小时 + 往后7小时，动态时间轴）
 fn get_hourly_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, String> {
-    let today_start = get_today_start()?;
+    let now = Local::now();
 
-    // 初始化24小时的数据点
-    let mut data_points: Vec<TokenDataPoint> = (0..24)
-        .map(|hour| TokenDataPoint {
-            label: format!("{:02}:00", hour),
+    // 计算当前小时的时间戳（精确到小时，分钟、秒、纳秒设为0）
+    let current_hour_timestamp = now
+        .with_minute(0)
+        .ok_or_else(|| "Failed to set minute to 0".to_string())?
+        .with_second(0)
+        .ok_or_else(|| "Failed to set second to 0".to_string())?
+        .with_nanosecond(0)
+        .ok_or_else(|| "Failed to set nanosecond to 0".to_string())?
+        .timestamp_millis();
+
+    // 往前5小时，往后7小时（共13个小时）
+    let start_timestamp = current_hour_timestamp - (5 * 3600000);
+    let end_timestamp = current_hour_timestamp + (8 * 3600000); // +8 因为要包含往后7小时
+    let total_hours: i32 = 13;
+
+    // 初始化数据点
+    let mut data_points: Vec<TokenDataPoint> = Vec::new();
+    for i in 0..total_hours {
+        let hour_timestamp = start_timestamp + (i as i64 * 3600000);
+        let hour_time = Local
+            .timestamp_millis_opt(hour_timestamp)
+            .single()
+            .ok_or_else(|| "Failed to create time from timestamp".to_string())?;
+
+        data_points.push(TokenDataPoint {
+            label: format!("{:02}:00", hour_time.hour()),
             tokens: 0,
             cache_read_tokens: 0,
-        })
-        .collect();
+        });
+    }
 
-    // 查询今天每小时的 Token 使用量
+    // 查询指定时间范围内每小时的 Token 使用量
     let mut stmt = conn
         .prepare(
             r#"
@@ -50,23 +72,27 @@ fn get_hourly_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, 
                 SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens) as tokens,
                 SUM(cache_read_input_tokens) as cache_read_tokens
             FROM request_logs
-            WHERE timestamp >= ?1 AND timestamp < ?1 + 86400000
+            WHERE timestamp >= ?1 AND timestamp < ?2
             GROUP BY hour
             "#,
         )
         .map_err(|e| format!("Failed to prepare hourly stats: {}", e))?;
 
     let rows = stmt
-        .query_map([today_start], |row| {
+        .query_map([start_timestamp, end_timestamp], |row| {
             Ok((row.get::<_, i32>(0)?, row.get::<_, i32>(1)?, row.get::<_, i32>(2)?))
         })
         .map_err(|e| format!("Failed to query hourly stats: {}", e))?;
 
     for row in rows {
         let (hour, tokens, cache_read_tokens) = row.map_err(|e| format!("Failed to read row: {}", e))?;
-        if hour >= 0 && hour < 24 {
-            data_points[hour as usize].tokens = tokens;
-            data_points[hour as usize].cache_read_tokens = cache_read_tokens;
+        // hour 是相对于 start_timestamp 的小时数，直接作为数组索引
+        if hour >= 0 && hour < total_hours {
+            let index = hour as usize;
+            if index < data_points.len() {
+                data_points[index].tokens = tokens;
+                data_points[index].cache_read_tokens = cache_read_tokens;
+            }
         }
     }
 
