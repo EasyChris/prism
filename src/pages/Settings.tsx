@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { getProxyConfig, setProxyConfig, getProxyStatus, getAppVersion, type ProxyConfig, type ProxyServerStatus } from "../lib/api"
+import { UpdateDialog } from "../components/UpdateDialog"
 
 export function Settings() {
   const [proxyConfig, setProxyConfigState] = useState<ProxyConfig>({ host: "127.0.0.1", port: 3000 })
@@ -8,6 +9,7 @@ export function Settings() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [showUpdateDialog, setShowUpdateDialog] = useState(false)
 
   // 加载配置和状态
   useEffect(() => {
@@ -202,12 +204,23 @@ export function Settings() {
         {/* About */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">关于</h3>
-          <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-            <div>版本：{appVersion}</div>
-            <div>Prism Hub - 专为 Claude Code 打造的动态路由网关</div>
+          <div className="space-y-4">
+            <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+              <div>版本：{appVersion}</div>
+              <div>Prism Hub - 专为 Claude Code 打造的动态路由网关</div>
+            </div>
+            <button
+              onClick={() => setShowUpdateDialog(true)}
+              className="w-full px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+            >
+              检查更新
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Update Dialog */}
+      <UpdateDialog isOpen={showUpdateDialog} onClose={() => setShowUpdateDialog(false)} />
     </div>
   )
 }

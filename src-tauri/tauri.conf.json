@@ -35,5 +35,15 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://github.com/EasyChris/prism/releases/latest/download/latest.json"
+      ],
+      "dialog": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDkyQjkxN0Q5MEY4OTgxNUIKUldSYmdZa1AyUmU1a29mWHRtTTk1N01xUW1xOFMxY1FpWituSHRmODNnV3NvRFNmYXl6L0tsNVkK"
+    }
   }
 }
