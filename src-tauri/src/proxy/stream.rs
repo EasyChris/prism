@@ -36,109 +36,119 @@ impl Stream for TokenCollectorStream {
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         match self.inner.as_mut().poll_next(cx) {
             Poll::Ready(Some(Ok(chunk))) => {
-                // 尝试解析 Token 信息（不阻塞转发）
-                if let Ok(text) = std::str::from_utf8(&chunk) {
-                    // 添加调试日志：输出收到的 chunk 内容（截断显示）
-                    let preview = if text.len() > 500 {
-                        format!("{}...", &text[..500])
-                    } else {
-                        text.to_string()
-                    };
-                    log::debug!("📦 Received chunk ({} bytes): {}", chunk.len(), preview);
+                // 克隆 chunk 用于后台统计，立即返回原始 chunk（零延迟转发）
+                let chunk_clone = chunk.clone();
+                let stats_clone = Arc::clone(&self.token_stats);
 
-                    if let Ok(mut stats) = self.token_stats.lock() {
-                        for line in text.lines() {
-                            if line.starts_with("data: ") {
-                                let json_str = &line[6..];
+                // 在后台线程处理 token 统计，完全不阻塞转发
+                tokio::spawn(async move {
+                    if let Ok(text) = std::str::from_utf8(&chunk_clone) {
+                        // 调试日志（仅在 debug 模式下）
+                        if log::log_enabled!(log::Level::Debug) {
+                            let preview = if text.len() > 500 {
+                                format!("{}...", &text[..500])
+                            } else {
+                                text.to_string()
+                            };
+                            log::debug!("📦 Received chunk ({} bytes): {}", chunk_clone.len(), preview);
+                        }
 
-                                if let Ok(json) = serde_json::from_str::<serde_json::Value>(json_str) {
-                                    // 记录事件类型
-                                    let event_type = json.get("type").and_then(|t| t.as_str()).unwrap_or("unknown");
-                                    log::debug!("🔍 SSE event type: {}", event_type);
+                        if let Ok(mut stats) = stats_clone.lock() {
+                            for line in text.lines() {
+                                if line.starts_with("data: ") {
+                                    let json_str = &line[6..];
 
-                                    // 收集输出文本（用于本地 token 计数）
-                                    if event_type == "content_block_delta" {
-                                        if let Some(delta) = json.get("delta") {
-                                            if let Some(text) = delta.get("text").and_then(|t| t.as_str()) {
-                                                stats.output_text.push_str(text);
+                                    if let Ok(json) = serde_json::from_str::<serde_json::Value>(json_str) {
+                                        // 记录事件类型
+                                        let event_type = json.get("type").and_then(|t| t.as_str()).unwrap_or("unknown");
+                                        log::debug!("🔍 SSE event type: {}", event_type);
+
+                                        // 收集输出文本（用于本地 token 计数）
+                                        if event_type == "content_block_delta" {
+                                            if let Some(delta) = json.get("delta") {
+                                                if let Some(text) = delta.get("text").and_then(|t| t.as_str()) {
+                                                    stats.output_text.push_str(text);
+                                                }
                                             }
                                         }
-                                    }
 
-                                    // 尝试从顶层 usage 字段提取（message_delta 事件）
-                                    if let Some(usage) = json.get("usage") {
-                                        stats.has_usage = true;
-                                        log::debug!("✅ Found usage in top-level: {:?}", usage);
-
-                                        // 使用最新值更新（SSE 流中的 usage 是累积的，每次都是完整值）
-                                        // 只在字段存在时更新，避免用 0 覆盖已有的非零值
-                                        if let Some(input) = usage.get("input_tokens")
-                                            .and_then(|t| t.as_i64())
-                                            .or_else(|| usage.get("prompt_tokens").and_then(|t| t.as_i64())) {
-                                            if input > 0 || stats.input_tokens == 0 {
-                                                stats.input_tokens = input as i32;
-                                            }
-                                        }
-                                        if let Some(output) = usage.get("output_tokens")
-                                            .and_then(|t| t.as_i64())
-                                            .or_else(|| usage.get("completion_tokens").and_then(|t| t.as_i64())) {
-                                            if output > 0 || stats.output_tokens == 0 {
-                                                stats.output_tokens = output as i32;
-                                            }
-                                        }
-                                        if let Some(cache_creation) = usage.get("cache_creation_input_tokens")
-                                            .and_then(|t| t.as_i64()) {
-                                            if cache_creation > 0 || stats.cache_creation_input_tokens == 0 {
-                                                stats.cache_creation_input_tokens = cache_creation as i32;
-                                            }
-                                        }
-                                        if let Some(cache_read) = usage.get("cache_read_input_tokens")
-                                            .and_then(|t| t.as_i64()) {
-                                            if cache_read > 0 || stats.cache_read_input_tokens == 0 {
-                                                stats.cache_read_input_tokens = cache_read as i32;
-                                            }
-                                        }
-                                        log::debug!("📊 Updated token stats: in={}, out={}, cache_creation={}, cache_read={}",
-                                            stats.input_tokens, stats.output_tokens,
-                                            stats.cache_creation_input_tokens, stats.cache_read_input_tokens);
-                                    }
-
-                                    // 尝试从 message.usage 字段提取（message_start 事件）
-                                    if let Some(message) = json.get("message") {
-                                        if let Some(usage) = message.get("usage") {
+                                        // 尝试从顶层 usage 字段提取（message_delta 事件）
+                                        if let Some(usage) = json.get("usage") {
                                             stats.has_usage = true;
-                                            log::debug!("✅ Found usage in message: {:?}", usage);
+                                            log::debug!("✅ Found usage in top-level: {:?}", usage);
 
+                                            // 使用最新值更新（SSE 流中的 usage 是累积的，每次都是完整值）
+                                            // 只在字段存在时更新，避免用 0 覆盖已有的非零值
                                             if let Some(input) = usage.get("input_tokens")
                                                 .and_then(|t| t.as_i64())
                                                 .or_else(|| usage.get("prompt_tokens").and_then(|t| t.as_i64())) {
-                                                stats.input_tokens = input as i32;
+                                                if input > 0 || stats.input_tokens == 0 {
+                                                    stats.input_tokens = input as i32;
+                                                }
                                             }
                                             if let Some(output) = usage.get("output_tokens")
                                                 .and_then(|t| t.as_i64())
                                                 .or_else(|| usage.get("completion_tokens").and_then(|t| t.as_i64())) {
-                                                stats.output_tokens = output as i32;
+                                                if output > 0 || stats.output_tokens == 0 {
+                                                    stats.output_tokens = output as i32;
+                                                }
                                             }
                                             if let Some(cache_creation) = usage.get("cache_creation_input_tokens")
                                                 .and_then(|t| t.as_i64()) {
-                                                stats.cache_creation_input_tokens = cache_creation as i32;
+                                                if cache_creation > 0 || stats.cache_creation_input_tokens == 0 {
+                                                    stats.cache_creation_input_tokens = cache_creation as i32;
+                                                }
                                             }
                                             if let Some(cache_read) = usage.get("cache_read_input_tokens")
                                                 .and_then(|t| t.as_i64()) {
-                                                stats.cache_read_input_tokens = cache_read as i32;
+                                                if cache_read > 0 || stats.cache_read_input_tokens == 0 {
+                                                    stats.cache_read_input_tokens = cache_read as i32;
+                                                }
                                             }
                                             log::debug!("📊 Updated token stats: in={}, out={}, cache_creation={}, cache_read={}",
                                                 stats.input_tokens, stats.output_tokens,
                                                 stats.cache_creation_input_tokens, stats.cache_read_input_tokens);
                                         }
+
+                                        // 尝试从 message.usage 字段提取（message_start 事件）
+                                        if let Some(message) = json.get("message") {
+                                            if let Some(usage) = message.get("usage") {
+                                                stats.has_usage = true;
+                                                log::debug!("✅ Found usage in message: {:?}", usage);
+
+                                                if let Some(input) = usage.get("input_tokens")
+                                                    .and_then(|t| t.as_i64())
+                                                    .or_else(|| usage.get("prompt_tokens").and_then(|t| t.as_i64())) {
+                                                    stats.input_tokens = input as i32;
+                                                }
+                                                if let Some(output) = usage.get("output_tokens")
+                                                    .and_then(|t| t.as_i64())
+                                                    .or_else(|| usage.get("completion_tokens").and_then(|t| t.as_i64())) {
+                                                    stats.output_tokens = output as i32;
+                                                }
+                                                if let Some(cache_creation) = usage.get("cache_creation_input_tokens")
+                                                    .and_then(|t| t.as_i64()) {
+                                                    stats.cache_creation_input_tokens = cache_creation as i32;
+                                                }
+                                                if let Some(cache_read) = usage.get("cache_read_input_tokens")
+                                                    .and_then(|t| t.as_i64()) {
+                                                    stats.cache_read_input_tokens = cache_read as i32;
+                                                }
+                                                log::debug!("📊 Updated token stats: in={}, out={}, cache_creation={}, cache_read={}",
+                                                    stats.input_tokens, stats.output_tokens,
+                                                    stats.cache_creation_input_tokens, stats.cache_read_input_tokens);
+                                            }
+                                        }
+                                    } else {
+                                        log::debug!("⚠️  Failed to parse JSON from SSE line");
                                     }
-                                } else {
-                                    log::debug!("⚠️  Failed to parse JSON from SSE line");
                                 }
                             }
                         }
                     }
-                }
+                });
+
+                // 立即返回 chunk，不等待统计完成
                 Poll::Ready(Some(Ok(chunk)))
             }
             Poll::Ready(Some(Err(e))) => {

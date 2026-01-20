@@ -126,9 +126,10 @@ pub(super) async fn handle_messages(
         log::info!("🤖 Model: {}", original_model);
     }
 
-    // 输出用户 prompt（截断显示）
-    let prompt_preview = if user_prompt.len() > 200 {
-        format!("{}...", &user_prompt[..200])
+    // 输出用户 prompt（截断显示，使用字节数粗略判断避免遍历整个字符串）
+    let prompt_preview = if user_prompt.len() > 600 {
+        // 字节数超过 600，安全截取前 200 个字符
+        user_prompt.chars().take(200).collect::<String>() + "..."
     } else {
         user_prompt.clone()
     };
@@ -279,84 +280,93 @@ pub(super) async fn handle_messages(
         }
     };
 
-    // 解析 Token 信息和响应内容（兼容不同供应商的响应格式）
-    let (input_tokens, output_tokens) = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&response_body) {
-        // 提取响应内容
-        let response_text = json.get("content")
-            .and_then(|c| c.as_array())
-            .and_then(|arr| arr.first())
-            .and_then(|item| item.get("text"))
-            .and_then(|t| t.as_str())
-            .unwrap_or("");
+    // 克隆响应体用于后台处理，立即返回响应
+    let response_body_clone = response_body.clone();
+    let profile_id = profile.id.clone();
+    let profile_name = profile.name.clone();
+    let profile_api_base_url = profile.api_base_url.clone();
+    let model_mapping_mode = profile.model_mapping_mode.clone();
 
-        // 输出响应内容（截断显示）
-        if !response_text.is_empty() {
-            let response_preview = if response_text.len() > 300 {
-                format!("{}...", &response_text[..300])
-            } else {
-                response_text.to_string()
-            };
-            log::info!("📝 Response: {}", response_preview);
-        }
-
-        // 尝试多种可能的 token 字段路径（兼容不同供应商）
-        let input = json.get("usage")
-            .and_then(|u| u.get("input_tokens"))
-            .and_then(|t| t.as_i64())
-            .or_else(|| {
-                json.get("usage")
-                    .and_then(|u| u.get("prompt_tokens"))
-                    .and_then(|t| t.as_i64())
-            })
-            .unwrap_or(0) as i32;
-
-        let output = json.get("usage")
-            .and_then(|u| u.get("output_tokens"))
-            .and_then(|t| t.as_i64())
-            .or_else(|| {
-                json.get("usage")
-                    .and_then(|u| u.get("completion_tokens"))
-                    .and_then(|t| t.as_i64())
-            })
-            .unwrap_or(0) as i32;
-
-        (input, output)
-    } else {
-        log::warn!("Failed to parse response body as JSON");
-        (0, 0)
-    };
-
-    // 计算耗时
-    let duration_ms = start_time.elapsed().as_millis() as i64;
-
-    // 输出统计信息
-    log::info!("📊 Stats: {} tokens (in: {}, out: {}) | {}ms | {}",
-        input_tokens + output_tokens, input_tokens, output_tokens, duration_ms, status);
-    log::info!("{}\n", "=".repeat(60));
-
-    // 记录日志（使用新的字段）
-    let response_size = response_body.len();
-    let mut request_log = RequestLog::new(
-        profile.id.clone(),
-        profile.name.clone(),
-        original_model.clone(),
-        crate::logger::ModelMode::from_mapping_mode(&profile.model_mapping_mode),
-        mapped_model.clone(),
-        profile.api_base_url.clone(),
-        request_size,
-    );
-    request_log.input_tokens = input_tokens;
-    request_log.output_tokens = output_tokens;
-    request_log.duration_ms = duration_ms;
-    request_log.status_code = status.as_u16() as i32;
-    request_log.is_stream = false;
-    request_log.response_size_bytes = Some(response_size as i64);
-
-    // 异步保存日志
+    // 在后台异步解析 token 和保存日志，完全不阻塞响应返回
     tokio::spawn(async move {
+        let (input_tokens, output_tokens) = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&response_body_clone) {
+            // 提取响应内容
+            let response_text = json.get("content")
+                .and_then(|c| c.as_array())
+                .and_then(|arr| arr.first())
+                .and_then(|item| item.get("text"))
+                .and_then(|t| t.as_str())
+                .unwrap_or("");
+
+            // 输出响应内容（截断显示，使用字节数粗略判断避免遍历整个字符串）
+            if !response_text.is_empty() {
+                let response_preview = if response_text.len() > 900 {
+                    // 字节数超过 900，安全截取前 300 个字符
+                    response_text.chars().take(300).collect::<String>() + "..."
+                } else {
+                    response_text.to_string()
+                };
+                log::info!("📝 Response: {}", response_preview);
+            }
+
+            // 尝试多种可能的 token 字段路径（兼容不同供应商）
+            let input = json.get("usage")
+                .and_then(|u| u.get("input_tokens"))
+                .and_then(|t| t.as_i64())
+                .or_else(|| {
+                    json.get("usage")
+                        .and_then(|u| u.get("prompt_tokens"))
+                        .and_then(|t| t.as_i64())
+                })
+                .unwrap_or(0) as i32;
+
+            let output = json.get("usage")
+                .and_then(|u| u.get("output_tokens"))
+                .and_then(|t| t.as_i64())
+                .or_else(|| {
+                    json.get("usage")
+                        .and_then(|u| u.get("completion_tokens"))
+                        .and_then(|t| t.as_i64())
+                })
+                .unwrap_or(0) as i32;
+
+            (input, output)
+        } else {
+            log::warn!("Failed to parse response body as JSON");
+            (0, 0)
+        };
+
+        // 计算耗时
+        let duration_ms = start_time.elapsed().as_millis() as i64;
+
+        // 输出统计信息
+        log::info!("📊 Stats: {} tokens (in: {}, out: {}) | {}ms | {}",
+            input_tokens + output_tokens, input_tokens, output_tokens, duration_ms, status);
+        log::info!("{}\n", "=".repeat(60));
+
+        // 记录日志（使用新的字段）
+        let response_size = response_body_clone.len();
+        let mut request_log = RequestLog::new(
+            profile_id,
+            profile_name,
+            original_model.clone(),
+            crate::logger::ModelMode::from_mapping_mode(&model_mapping_mode),
+            mapped_model.clone(),
+            profile_api_base_url,
+            request_size,
+        );
+        request_log.input_tokens = input_tokens;
+        request_log.output_tokens = output_tokens;
+        request_log.duration_ms = duration_ms;
+        request_log.status_code = status.as_u16() as i32;
+        request_log.is_stream = false;
+        request_log.response_size_bytes = Some(response_size as i64);
+
+        // 保存日志
         crate::logger::save_log(request_log).await;
     });
 
+    // 立即返回响应，不等待 token 解析和日志保存
     let response = (status, response_headers, response_body).into_response();
     Ok(response)
 }
