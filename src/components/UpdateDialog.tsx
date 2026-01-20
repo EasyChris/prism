@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { check } from '@tauri-apps/plugin-updater';
+import { check, type DownloadEvent } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
-import Modal from './Modal';
+import { Modal } from './Modal';
 
 interface UpdateDialogProps {
   isOpen: boolean;
@@ -53,13 +53,13 @@ export function UpdateDialog({ isOpen, onClose }: UpdateDialogProps) {
         return;
       }
 
-      await update.downloadAndInstall((event) => {
+      await update.downloadAndInstall((event: DownloadEvent) => {
         switch (event.event) {
           case 'Started':
             setDownloadProgress(0);
             break;
           case 'Progress':
-            setDownloadProgress(event.data.chunkLength);
+            setDownloadProgress(event.data?.chunkLength || 0);
             break;
           case 'Finished':
             setDownloadProgress(100);

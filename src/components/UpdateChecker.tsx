@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { check } from '@tauri-apps/plugin-updater';
-import { relaunch } from '@tauri-apps/plugin-process';
 
 interface UpdateInfo {
   version: string;
@@ -12,7 +11,6 @@ export function UpdateChecker() {
   const [checking, setChecking] = useState(false);
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
-  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const checkForUpdates = async () => {
@@ -41,5 +39,5 @@ export function UpdateChecker() {
     }
   };
 
-  return { checking, updateAvailable, updateInfo, downloading, error, checkForUpdates };
+  return { checking, updateAvailable, updateInfo, error, checkForUpdates };
 }
