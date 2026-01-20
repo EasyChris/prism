@@ -2,8 +2,10 @@ mod handler;
 mod stream;
 mod utils;
 mod proxy_config;
+mod token_counter;
 
 pub use proxy_config::{ProxyConfig, ProxyServerStatus};
+pub use token_counter::TokenCounter;
 
 use axum::{
     routing::post,

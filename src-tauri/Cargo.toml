@@ -61,3 +61,6 @@ regex = "1.10"
 
 # 图片处理（用于托盘图标）
 image = "0.25"
+
+# Token 计数（用于本地 token 统计）
+tiktoken-rs = "0.5"

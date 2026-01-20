@@ -1,4 +1,4 @@
-# Claude Code Proxy Hub
+# Prism ｜ Claude Code Proxy Hub
 
 <div align="center">
 
@@ -14,7 +14,9 @@
 
 ## 项目简介
 
-Claude Code Proxy Hub 是一个专为 Claude Code 设计的本地代理工具，解决多 API 提供商管理、模型兼容性、流量审计等核心问题。
+![仪表盘](docs/pic/1_仪表盘.png)
+
+Prism Hub 是一个专为 Claude Code 设计的本地代理工具，解决多 API 提供商管理、模型兼容性、流量审计等核心问题。
 
 ### 核心特性
 

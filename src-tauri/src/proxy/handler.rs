@@ -193,6 +193,10 @@ pub(super) async fn handle_messages(
 
     // 转发请求到上游 API（使用修改后的请求体）
     log::debug!("Sending request to upstream...");
+
+    // 克隆请求体用于后续的 token 计数
+    let request_body_for_counting = modified_body.clone();
+
     let response = client
         .post(&upstream_url)
         .headers(request_headers)
@@ -251,8 +255,8 @@ pub(super) async fn handle_messages(
             crate::logger::save_log(log_clone).await;
         });
 
-        // 传递 request_log 给 stream handler，它会在流结束后 UPDATE
-        return handle_stream_response(response, request_log, start_time).await;
+        // 传递 request_log 和 request_body 给 stream handler，它会在流结束后 UPDATE
+        return handle_stream_response(response, request_log, start_time, request_body_for_counting).await;
     }
 
     // 非流式响应，直接返回
