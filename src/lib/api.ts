@@ -168,6 +168,15 @@ export interface TokenDataPoint {
 
 export type TimeRange = 'hour' | 'day' | 'week' | 'month'
 
+// 配置消耗排名接口
+export interface ProfileConsumption {
+  profileId: string
+  profileName: string
+  totalTokens: number
+  percentage: number
+  rank: number
+}
+
 // 获取 Token 使用量统计数据
 export async function getTokenStats(timeRange: TimeRange): Promise<TokenDataPoint[]> {
   console.log("[API] Calling get_token_stats...", { timeRange })
@@ -177,6 +186,25 @@ export async function getTokenStats(timeRange: TimeRange): Promise<TokenDataPoin
     return result
   } catch (error) {
     console.error("[API] get_token_stats error:", error)
+    throw error
+  }
+}
+
+// 获取配置消耗排名
+export async function getProfileConsumptionRanking(
+  timeRange?: TimeRange,
+  limit?: number
+): Promise<ProfileConsumption[]> {
+  console.log("[API] Calling get_profile_consumption_ranking...", { timeRange, limit })
+  try {
+    const result = await invoke<ProfileConsumption[]>("get_profile_consumption_ranking", {
+      timeRange,
+      limit
+    })
+    console.log("[API] get_profile_consumption_ranking result:", result)
+    return result
+  } catch (error) {
+    console.error("[API] get_profile_consumption_ranking error:", error)
     throw error
   }
 }

@@ -153,6 +153,7 @@ pub fn run() {
       commands::get_logs,
       commands::get_dashboard_stats,
       commands::get_token_stats,
+      commands::get_profile_consumption_ranking,
       commands::get_proxy_api_key,
       commands::refresh_proxy_api_key,
       commands::get_auth_enabled,

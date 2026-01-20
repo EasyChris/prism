@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import * as api from "@/lib/api"
 import { ProfileSelector } from "@/components/ProfileSelector"
 import { SetupGuideModal } from "@/components/SetupGuideModal"
+import { ProfileRanking } from "@/components/ProfileRanking"
 
 export function Dashboard() {
   const [activeProfile, setActiveProfile] = useState<api.Profile | null>(null)
@@ -284,12 +285,14 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Token Usage Chart with Time Range Tabs */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Token 使用量</h3>
-          {/* Tab 切换 */}
-          <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
+      {/* Token Usage Chart and Profile Ranking - Side by Side */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Left: Token Usage Chart */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Token 使用量</h3>
+            {/* Tab 切换 */}
+            <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
             {(['hour', 'day', 'week', 'month'] as api.TimeRange[]).map((range) => (
               <button
                 key={range}
@@ -423,6 +426,12 @@ export function Dashboard() {
               </div>
             )}
           </div>
+        </div>
+        </div>
+
+        {/* Right: Profile Ranking */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
+          <ProfileRanking timeRange={timeRange} limit={10} />
         </div>
       </div>
 

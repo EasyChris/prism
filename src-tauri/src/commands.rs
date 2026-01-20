@@ -277,6 +277,38 @@ pub async fn get_token_stats(time_range: String) -> Result<Vec<TokenDataPointDto
         .collect())
 }
 
+// 配置消耗排名相关命令
+
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ProfileConsumptionDto {
+    pub profile_id: String,
+    pub profile_name: String,
+    pub total_tokens: i32,
+    pub percentage: f32,
+    pub rank: i32,
+}
+
+#[tauri::command]
+pub async fn get_profile_consumption_ranking(
+    time_range: Option<String>,
+    limit: Option<i32>,
+) -> Result<Vec<ProfileConsumptionDto>, String> {
+    let time_range_ref = time_range.as_deref();
+    let rankings = crate::db::get_profile_consumption_ranking(time_range_ref, limit).await?;
+
+    Ok(rankings
+        .into_iter()
+        .map(|r| ProfileConsumptionDto {
+            profile_id: r.profile_id,
+            profile_name: r.profile_name,
+            total_tokens: r.total_tokens,
+            percentage: r.percentage,
+            rank: r.rank,
+        })
+        .collect())
+}
+
 // API Key 管理相关命令
 
 #[tauri::command]

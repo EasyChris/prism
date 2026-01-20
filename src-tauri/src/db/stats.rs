@@ -20,6 +20,16 @@ pub struct TokenDataPoint {
     pub cache_read_tokens: i32,  // 缓存命中的 token 数
 }
 
+/// 配置消耗排名数据
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ProfileConsumption {
+    pub profile_id: String,
+    pub profile_name: String,
+    pub total_tokens: i32,
+    pub percentage: f32,
+    pub rank: i32,
+}
+
 /// 获取仪表盘统计数据
 pub async fn get_dashboard_stats() -> Result<DashboardStats, String> {
     let db_path = get_db_path();
@@ -329,4 +339,133 @@ fn get_monthly_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>,
     }
 
     Ok(data_points)
+}
+
+/// 获取配置消耗排名（按总Token消耗）
+pub async fn get_profile_consumption_ranking(
+    time_range: Option<&str>,
+    limit: Option<i32>,
+) -> Result<Vec<ProfileConsumption>, String> {
+    let db_path = get_db_path();
+    let time_range = time_range.map(|s| s.to_string());
+    let limit = limit.unwrap_or(10).max(1).min(100);
+
+    let rankings = tokio::task::spawn_blocking(move || {
+        let conn = rusqlite::Connection::open(&db_path)
+            .map_err(|e| format!("Failed to open database: {}", e))?;
+
+        // 计算时间范围的起始时间戳（如果提供）
+        let timestamp_filter = match time_range.as_deref() {
+            Some("hour") => {
+                let now = Local::now();
+                let today_start = Local
+                    .with_ymd_and_hms(now.year(), now.month(), now.day(), 0, 0, 0)
+                    .single()
+                    .ok_or_else(|| "Failed to create today start timestamp".to_string())?
+                    .timestamp_millis();
+                Some(today_start)
+            }
+            Some("day") => {
+                let now = Local::now();
+                let today_start = Local
+                    .with_ymd_and_hms(now.year(), now.month(), now.day(), 0, 0, 0)
+                    .single()
+                    .ok_or_else(|| "Failed to create today start timestamp".to_string())?
+                    .timestamp_millis();
+                Some(today_start - (6 * 86400000))
+            }
+            Some("week") => {
+                let now = Local::now();
+                let today_end = Local
+                    .with_ymd_and_hms(now.year(), now.month(), now.day(), 23, 59, 59)
+                    .single()
+                    .ok_or_else(|| "Failed to create today end timestamp".to_string())?
+                    .timestamp_millis();
+                Some(today_end - (28 * 86400000))
+            }
+            Some("month") => {
+                let current_year = Local::now().year();
+                let year_start = Local
+                    .with_ymd_and_hms(current_year, 1, 1, 0, 0, 0)
+                    .single()
+                    .ok_or_else(|| "Failed to create year start timestamp".to_string())?
+                    .timestamp_millis();
+                Some(year_start)
+            }
+            _ => None,
+        };
+
+        // 构建 SQL 查询
+        let sql = if timestamp_filter.is_some() {
+            r#"
+            SELECT
+                profile_id,
+                profile_name,
+                SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens) as total_tokens
+            FROM request_logs
+            WHERE timestamp >= ?1
+            GROUP BY profile_id, profile_name
+            ORDER BY total_tokens DESC
+            LIMIT ?2
+            "#
+        } else {
+            r#"
+            SELECT
+                profile_id,
+                profile_name,
+                SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens) as total_tokens
+            FROM request_logs
+            GROUP BY profile_id, profile_name
+            ORDER BY total_tokens DESC
+            LIMIT ?1
+            "#
+        };
+
+        let mut stmt = conn
+            .prepare(sql)
+            .map_err(|e| format!("Failed to prepare statement: {}", e))?;
+
+        // 执行查询
+        let results: Vec<(String, String, i32)> = if let Some(ts) = timestamp_filter {
+            stmt.query_map([ts, limit as i64], |row| {
+                Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+            })
+            .map_err(|e| format!("Failed to query rankings: {}", e))?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| format!("Failed to collect rankings: {}", e))?
+        } else {
+            stmt.query_map([limit as i64], |row| {
+                Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+            })
+            .map_err(|e| format!("Failed to query rankings: {}", e))?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| format!("Failed to collect rankings: {}", e))?
+        };
+
+        // 计算总 token 数和百分比
+        let total_tokens: i32 = results.iter().map(|(_, _, tokens)| tokens).sum();
+
+        let mut rankings = Vec::new();
+        for (index, (profile_id, profile_name, tokens)) in results.into_iter().enumerate() {
+            let percentage = if total_tokens > 0 {
+                (tokens as f32 / total_tokens as f32) * 100.0
+            } else {
+                0.0
+            };
+
+            rankings.push(ProfileConsumption {
+                profile_id,
+                profile_name,
+                total_tokens: tokens,
+                percentage,
+                rank: (index + 1) as i32,
+            });
+        }
+
+        Ok::<Vec<ProfileConsumption>, String>(rankings)
+    })
+    .await
+    .map_err(|e| format!("Task join error: {}", e))??;
+
+    Ok(rankings)
 }
