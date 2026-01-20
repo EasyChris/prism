@@ -2,9 +2,9 @@
 
 <div align="center">
 
-**专为 Claude Code 打造的智能路由网关与流量审计工具**
+专为 Claude Code 打造的智能路由网关与流量审计工具
 
-一个运行在 macOS 上的轻量级桌面应用，作为 Claude Code 的本地中转站
+**无需重启 Claude Code 一键切换模型**
 
 实现"一次配置，随意切换"的无缝体验，提供完整的流量去向记录与成本审计
 
@@ -28,7 +28,7 @@ Claude Code Proxy Hub 是一个专为 Claude Code 设计的本地代理工具，
 
 **完整流量审计**
 - 记录每个请求的 Token 消耗（Input/Output/Total）
-- 追踪请���耗时、HTTP 状态码、路由去向
+- 追踪请求耗时、HTTP 状态码、路由去向
 - 提供成本估算和统计分析
 
 **本地优先与安全**
@@ -50,7 +50,7 @@ Claude Code Proxy Hub 是一个专为 Claude Code 设计的本地代理工具，
 统一管理多个 API 提供商配置，支持快速切换。
 
 ### 添加配置
-![添加配置](docs/pic/3_添加配置.png)
+![添加配置](docs/pic/3_0_添加配置_透传模式.png)
 
 向导式配置流程，支持测试连接验证。
 
