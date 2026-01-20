@@ -325,10 +325,10 @@ pub fn set_auth_enabled(config: State<SharedConfigManager>, enabled: bool) -> Re
 }
 
 #[tauri::command]
-pub fn get_proxy_server_url() -> Result<String, String> {
-    // 返回代理服务器的地址
-    // 注意：这里的地址应该与 proxy/mod.rs 中的地址保持一致
-    Ok("http://127.0.0.1:3000".to_string())
+pub async fn get_proxy_server_url() -> Result<String, String> {
+    // 从数据库加载代理配置
+    let config = crate::db::load_proxy_config().await?;
+    Ok(format!("http://{}:{}", config.host, config.port))
 }
 
 // ==================== 窗口控制命令 ====================
@@ -349,4 +349,56 @@ pub fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
 pub fn update_tray_menu(app: tauri::AppHandle, config: State<SharedConfigManager>) -> Result<(), String> {
     crate::tray::rebuild_tray_menu(&app, &config)
         .map_err(|e| format!("Failed to update tray menu: {}", e))
+}
+
+// ==================== 代理服务器配置命令 ====================
+
+#[tauri::command]
+pub async fn get_proxy_config() -> Result<crate::proxy::ProxyConfig, String> {
+    crate::db::load_proxy_config().await
+}
+
+#[tauri::command]
+pub async fn set_proxy_config(
+    status_manager: State<'_, crate::proxy::ProxyStatusManager>,
+    config: crate::proxy::ProxyConfig,
+) -> Result<(), String> {
+    // 验证配置
+    config.validate()?;
+
+    // 保存到数据库
+    crate::db::save_proxy_config(&config).await?;
+
+    log::info!("Proxy config updated: {}:{}", config.host, config.port);
+
+    // 自动触发重启
+    status_manager.restart(config).await?;
+
+    log::info!("Proxy server restart triggered");
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn get_proxy_status() -> Result<crate::proxy::ProxyServerStatus, String> {
+    crate::db::load_proxy_status().await
+}
+
+#[tauri::command]
+pub async fn restart_proxy_server(
+    _config: State<'_, SharedConfigManager>,
+    proxy_config: crate::proxy::ProxyConfig,
+) -> Result<String, String> {
+    // 验证配置
+    proxy_config.validate()?;
+
+    // 保存配置
+    crate::db::save_proxy_config(&proxy_config).await?;
+
+    // 注意：这里需要实现重启逻辑
+    // 由于当前的架构限制，我们暂时只保存配置
+    // 实际的重启需要应用重启后才能生效
+
+    log::info!("Proxy server will restart on next app launch: {}:{}", proxy_config.host, proxy_config.port);
+
+    Ok(format!("Proxy server configured to listen on {}:{}. Restart the app to apply changes.", proxy_config.host, proxy_config.port))
 }

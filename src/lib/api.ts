@@ -271,3 +271,71 @@ export async function updateTrayMenu(): Promise<void> {
     throw error
   }
 }
+
+// ==================== 代理服务器配置相关接口 ====================
+
+// 代理服务器配置接口
+export interface ProxyConfig {
+  host: string
+  port: number
+}
+
+// 代理服务器状态接口
+export interface ProxyServerStatus {
+  isRunning: boolean
+  addr: string | null
+  startedAt: number | null
+  totalRequests: number
+  lastError: string | null
+}
+
+// 获取代理服务器配置
+export async function getProxyConfig(): Promise<ProxyConfig> {
+  console.log("[API] Calling get_proxy_config...")
+  try {
+    const result = await invoke<ProxyConfig>("get_proxy_config")
+    console.log("[API] get_proxy_config result:", result)
+    return result
+  } catch (error) {
+    console.error("[API] get_proxy_config error:", error)
+    throw error
+  }
+}
+
+// 设置代理服务器配置
+export async function setProxyConfig(config: ProxyConfig): Promise<void> {
+  console.log("[API] Calling set_proxy_config...", config)
+  try {
+    await invoke("set_proxy_config", { config })
+    console.log("[API] set_proxy_config success")
+  } catch (error) {
+    console.error("[API] set_proxy_config error:", error)
+    throw error
+  }
+}
+
+// 获取代理服务器状态
+export async function getProxyStatus(): Promise<ProxyServerStatus> {
+  console.log("[API] Calling get_proxy_status...")
+  try {
+    const result = await invoke<ProxyServerStatus>("get_proxy_status")
+    console.log("[API] get_proxy_status result:", result)
+    return result
+  } catch (error) {
+    console.error("[API] get_proxy_status error:", error)
+    throw error
+  }
+}
+
+// 重启代理服务器
+export async function restartProxyServer(config: ProxyConfig): Promise<string> {
+  console.log("[API] Calling restart_proxy_server...", config)
+  try {
+    const result = await invoke<string>("restart_proxy_server", { proxyConfig: config })
+    console.log("[API] restart_proxy_server result:", result)
+    return result
+  } catch (error) {
+    console.error("[API] restart_proxy_server error:", error)
+    throw error
+  }
+}

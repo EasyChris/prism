@@ -28,6 +28,18 @@ pub fn run() {
         } else {
           log::info!("Database initialized successfully");
         }
+
+        // 清理超过30天的旧日志
+        match db::cleanup_old_logs(30).await {
+          Ok(count) => {
+            if count > 0 {
+              log::info!("Cleaned up {} old logs (retention: 30 days)", count);
+            }
+          }
+          Err(e) => {
+            log::warn!("Failed to cleanup old logs: {}", e);
+          }
+        }
       });
 
       // 加载配置（优先从数据库加载，如果失败则尝试从 JSON 文件迁移）
@@ -70,16 +82,51 @@ pub fn run() {
 
       let shared_config = Arc::new(RwLock::new(config_manager));
 
+      // 加载代理服务器配置
+      let proxy_config = tauri::async_runtime::block_on(async {
+        match crate::db::load_proxy_config().await {
+          Ok(config) => {
+            log::info!("Proxy config loaded: {}:{}", config.host, config.port);
+            config
+          }
+          Err(e) => {
+            log::warn!("Failed to load proxy config, using defaults: {}", e);
+            crate::proxy::ProxyConfig::default()
+          }
+        }
+      });
+
+      // 创建代理状态管理器
+      let proxy_status_manager = crate::proxy::ProxyStatusManager::new();
+
+      // 加载之前的状态，但重置为未运行（因为服务器还没启动）
+      let _ = tauri::async_runtime::block_on(async {
+        let _ = proxy_status_manager.load().await;
+        // 重置状态为未运行，等服务器真正启动后再更新
+        proxy_status_manager.update_status(|status| {
+          status.is_running = false;
+        }).await;
+        proxy_status_manager.persist().await
+      });
+
       // 启动代理服务器
       let config_clone = shared_config.clone();
+      let proxy_status_manager_clone = proxy_status_manager.clone();
+      let proxy_config_clone = proxy_config.clone();
       tauri::async_runtime::spawn(async move {
-        if let Err(e) = proxy::start_proxy_server(config_clone).await {
+        if let Err(e) = proxy::start_proxy_server(
+          config_clone,
+          proxy_config_clone,
+          proxy_status_manager_clone,
+        ).await {
           log::error!("Failed to start proxy server: {}", e);
+          // 启动失败，确保状态为未运行
         }
       });
 
       // 将配置管理器作为状态管理
       app.manage(shared_config.clone());
+      app.manage(proxy_status_manager.clone());
 
       // 初始化系统托盘
       if let Err(e) = tray::init_tray(app.handle(), shared_config) {
@@ -111,6 +158,10 @@ pub fn run() {
       commands::get_auth_enabled,
       commands::set_auth_enabled,
       commands::get_proxy_server_url,
+      commands::get_proxy_config,
+      commands::set_proxy_config,
+      commands::get_proxy_status,
+      commands::restart_proxy_server,
       commands::show_main_window,
       commands::update_tray_menu,
     ])

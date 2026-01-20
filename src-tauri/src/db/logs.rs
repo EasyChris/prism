@@ -152,3 +152,38 @@ pub async fn get_logs_from_db(limit: usize, offset: usize) -> Result<Vec<Request
 
     Ok(logs)
 }
+
+/// 清理超过指定天数的旧日志
+///
+/// # Arguments
+/// * `retention_days` - 保留的天数，默认30天
+///
+/// # Returns
+/// * `Ok(usize)` - 删除的日志条数
+pub async fn cleanup_old_logs(retention_days: i64) -> Result<usize, String> {
+    let db_path = get_db_path();
+
+    let deleted_count = tokio::task::spawn_blocking(move || {
+        let conn = rusqlite::Connection::open(&db_path)
+            .map_err(|e| format!("Failed to open database: {}", e))?;
+
+        // 计算保留时间的截止时间戳（毫秒）
+        let now = chrono::Local::now().timestamp_millis();
+        let cutoff_timestamp = now - (retention_days * 86400000); // 86400000ms = 1天
+
+        // 删除超过保留期的日志
+        let deleted = conn.execute(
+            "DELETE FROM request_logs WHERE timestamp < ?1",
+            [cutoff_timestamp],
+        )
+        .map_err(|e| format!("Failed to delete old logs: {}", e))?;
+
+        log::info!("Cleaned up {} old logs (retention: {} days)", deleted, retention_days);
+
+        Ok::<usize, String>(deleted)
+    })
+    .await
+    .map_err(|e| format!("Task join error: {}", e))??;
+
+    Ok(deleted_count)
+}

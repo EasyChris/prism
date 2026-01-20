@@ -2,7 +2,7 @@ import { useState, useEffect } from "react"
 import { Modal } from "@/components/Modal"
 import { ProfileForm } from "@/components/ProfileForm"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
-import { Edit2, Trash2, CheckCircle2, Circle } from "lucide-react"
+import { Edit2, Trash2, CheckCircle2, Circle, Copy } from "lucide-react"
 import * as api from "@/lib/api"
 import type { Profile } from "@/lib/api"
 
@@ -61,6 +61,43 @@ export function Profiles() {
     } catch (error) {
       console.error("Failed to save profile:", error)
       alert("保存配置失败：" + error)
+    }
+  }
+
+  const handleDuplicateProfile = async (profile: Profile) => {
+    try {
+      // 生成新的配置名称
+      let newName = `${profile.name} - 副本`
+      let counter = 1
+
+      // 检查名称是否重复，如果重复则添加数字后缀
+      while (profiles.some(p => p.name === newName)) {
+        counter++
+        newName = `${profile.name} - 副本 ${counter}`
+      }
+
+      // 创建新配置（深拷贝原配置数据，但不包含 id 和 isActive）
+      const newProfile: Omit<Profile, "id" | "isActive"> = {
+        name: newName,
+        apiBaseUrl: profile.apiBaseUrl,
+        apiKey: profile.apiKey,
+        modelMappingMode: profile.modelMappingMode,
+        overrideModel: profile.overrideModel,
+        modelMappings: profile.modelMappings.map(rule => ({ ...rule })) // 深拷贝映射规则
+      }
+
+      await api.createProfile(newProfile)
+      await loadProfiles() // 重新加载配置列表
+
+      // 更新托盘菜单
+      try {
+        await api.updateTrayMenu()
+      } catch (error) {
+        console.error("Failed to update tray menu:", error)
+      }
+    } catch (error) {
+      console.error("Failed to duplicate profile:", error)
+      alert("复制配置失败：" + error)
     }
   }
 
@@ -229,6 +266,13 @@ export function Profiles() {
                       title="编辑"
                     >
                       <Edit2 size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDuplicateProfile(profile)}
+                      className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
+                      title="复制"
+                    >
+                      <Copy size={16} />
                     </button>
                     <button
                       onClick={() => handleDeleteProfile(profile)}

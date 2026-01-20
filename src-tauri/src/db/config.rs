@@ -1,6 +1,7 @@
 // 配置相关的数据库操作
 
 use crate::config::{Profile, MappingRule, ModelMappingMode};
+use crate::proxy::{ProxyConfig, ProxyServerStatus};
 use super::schema::get_db_path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -261,4 +262,44 @@ pub async fn load_app_config(key: &str) -> Result<Option<String>, String> {
     })
     .await
     .map_err(|e| format!("Task join error: {}", e))?
+}
+
+/// 保存代理服务器配置
+pub async fn save_proxy_config(config: &ProxyConfig) -> Result<(), String> {
+    let config_json = serde_json::to_string(config)
+        .map_err(|e| format!("Failed to serialize config: {}", e))?;
+
+    save_app_config(ProxyConfig::config_key(), &config_json).await
+}
+
+/// 加载代理服务器配置
+pub async fn load_proxy_config() -> Result<ProxyConfig, String> {
+    match load_app_config(ProxyConfig::config_key()).await? {
+        Some(config_json) => {
+            let config: ProxyConfig = serde_json::from_str(&config_json)
+                .map_err(|e| format!("Failed to deserialize config: {}", e))?;
+            Ok(config)
+        }
+        None => Ok(ProxyConfig::default()),
+    }
+}
+
+/// 保存代理服务器状态
+pub async fn save_proxy_status(status: &ProxyServerStatus) -> Result<(), String> {
+    let status_json = serde_json::to_string(status)
+        .map_err(|e| format!("Failed to serialize status: {}", e))?;
+
+    save_app_config(ProxyConfig::status_key(), &status_json).await
+}
+
+/// 加载代理服务器状态
+pub async fn load_proxy_status() -> Result<ProxyServerStatus, String> {
+    match load_app_config(ProxyConfig::status_key()).await? {
+        Some(status_json) => {
+            let status: ProxyServerStatus = serde_json::from_str(&status_json)
+                .map_err(|e| format!("Failed to deserialize status: {}", e))?;
+            Ok(status)
+        }
+        None => Ok(ProxyServerStatus::default()),
+    }
 }

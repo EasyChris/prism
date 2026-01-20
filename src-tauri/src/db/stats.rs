@@ -163,33 +163,36 @@ fn get_hourly_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, 
     Ok(data_points)
 }
 
-/// 获取按天统计的数据（本周7天）
+/// 获取按天统计的数据（前6天+今天，共7天）
 fn get_daily_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, String> {
     let now = Local::now();
 
-    // 计算本周一的开始时间戳（本地时区）
+    // 计算今天的开始时间戳（本地时区）
     let today_start = Local
         .with_ymd_and_hms(now.year(), now.month(), now.day(), 0, 0, 0)
         .single()
         .ok_or_else(|| "Failed to create today start timestamp".to_string())?
         .timestamp_millis();
 
-    // 计算距离周一的天数（0=周一, 6=周日）
-    let days_since_monday = now.weekday().num_days_from_monday() as i64;
-    let monday_start = today_start - (days_since_monday * 86400000);
+    // 计算6天前的开始时间戳
+    let six_days_ago = today_start - (6 * 86400000);
 
-    // 初始化7天的数据点
-    let weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
-    let mut data_points: Vec<TokenDataPoint> = weekdays
-        .iter()
-        .map(|&day| TokenDataPoint {
-            label: day.to_string(),
+    // 初始化7天的数据点（从6天前到今天）
+    let mut data_points: Vec<TokenDataPoint> = Vec::new();
+    for i in 0..7 {
+        let day_timestamp = six_days_ago + (i * 86400000);
+        let day_date = Local.timestamp_millis_opt(day_timestamp)
+            .single()
+            .ok_or_else(|| "Failed to create date from timestamp".to_string())?;
+
+        data_points.push(TokenDataPoint {
+            label: format!("{}月{}日", day_date.month(), day_date.day()),
             tokens: 0,
             cache_read_tokens: 0,
-        })
-        .collect();
+        });
+    }
 
-    // 查询本周每天的 Token 使用量
+    // 查询最近7天每天的 Token 使用量
     let mut stmt = conn
         .prepare(
             r#"
@@ -205,7 +208,7 @@ fn get_daily_stats(conn: &rusqlite::Connection) -> Result<Vec<TokenDataPoint>, S
         .map_err(|e| format!("Failed to prepare daily stats: {}", e))?;
 
     let rows = stmt
-        .query_map([monday_start], |row| {
+        .query_map([six_days_ago], |row| {
             Ok((row.get::<_, i32>(0)?, row.get::<_, i32>(1)?, row.get::<_, i32>(2)?))
         })
         .map_err(|e| format!("Failed to query daily stats: {}", e))?;
