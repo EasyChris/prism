@@ -165,6 +165,7 @@ pub fn run() {
       commands::restart_proxy_server,
       commands::show_main_window,
       commands::update_tray_menu,
+      commands::get_app_version,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

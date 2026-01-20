@@ -434,3 +434,10 @@ pub async fn restart_proxy_server(
 
     Ok(format!("Proxy server configured to listen on {}:{}. Restart the app to apply changes.", proxy_config.host, proxy_config.port))
 }
+
+// ==================== 应用信息命令 ====================
+
+#[tauri::command]
+pub fn get_app_version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
+}

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react"
-import { getProxyConfig, setProxyConfig, getProxyStatus, type ProxyConfig, type ProxyServerStatus } from "../lib/api"
+import { getProxyConfig, setProxyConfig, getProxyStatus, getAppVersion, type ProxyConfig, type ProxyServerStatus } from "../lib/api"
 
 export function Settings() {
   const [proxyConfig, setProxyConfigState] = useState<ProxyConfig>({ host: "127.0.0.1", port: 3000 })
   const [proxyStatus, setProxyStatus] = useState<ProxyServerStatus | null>(null)
+  const [appVersion, setAppVersion] = useState<string>("0.1.0")
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
@@ -12,12 +13,14 @@ export function Settings() {
   useEffect(() => {
     async function loadConfig() {
       try {
-        const [config, status] = await Promise.all([
+        const [config, status, version] = await Promise.all([
           getProxyConfig(),
-          getProxyStatus()
+          getProxyStatus(),
+          getAppVersion()
         ])
         setProxyConfigState(config)
         setProxyStatus(status)
+        setAppVersion(version)
       } catch (error) {
         console.error("Failed to load proxy config:", error)
         showMessage("error", "加载配置失败")
@@ -200,7 +203,7 @@ export function Settings() {
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">关于</h3>
           <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-            <div>版本：0.1.0</div>
+            <div>版本：{appVersion}</div>
             <div>Prism Hub - 专为 Claude Code 打造的动态路由网关</div>
           </div>
         </div>

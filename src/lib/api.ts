@@ -367,3 +367,18 @@ export async function restartProxyServer(config: ProxyConfig): Promise<string> {
     throw error
   }
 }
+
+// ==================== 应用信息相关接口 ====================
+
+// 获取应用版本号
+export async function getAppVersion(): Promise<string> {
+  console.log("[API] Calling get_app_version...")
+  try {
+    const result = await invoke<string>("get_app_version")
+    console.log("[API] get_app_version result:", result)
+    return result
+  } catch (error) {
+    console.error("[API] get_app_version error:", error)
+    throw error
+  }
+}
