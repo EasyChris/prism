@@ -182,6 +182,7 @@ pub(super) async fn handle_stream_response(
     request_log: RequestLog,
     start_time: Instant,
     request_body: String,  // 添加请求体参数用于计算 input tokens
+    app_handle: tauri::AppHandle,
 ) -> Result<Response, StatusCode> {
     // 获取响应头
     let mut response_headers = HeaderMap::new();
@@ -208,6 +209,7 @@ pub(super) async fn handle_stream_response(
     // 在流结束后更新日志（等待流真正完成的信号）
     let request_log_clone = request_log.clone();
     let request_body_clone = request_body.clone();
+    let app_handle_clone = app_handle.clone();
     tokio::spawn(async move {
         // 等待流完成信号，最多等待 120 秒（超长响应的兜底）
         let timeout_duration = tokio::time::Duration::from_secs(120);
@@ -285,7 +287,7 @@ pub(super) async fn handle_stream_response(
         }
 
         // 使用 UPDATE 更新已存在的日志记录
-        crate::logger::update_log(log).await;
+        crate::logger::update_log(log, Some(&app_handle_clone)).await;
     });
 
     // 立即返回流式响应

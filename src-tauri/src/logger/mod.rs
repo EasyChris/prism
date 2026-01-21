@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
+use tauri::Emitter;
 
 /// 模型处理模式
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -134,17 +135,46 @@ fn extract_provider(api_base_url: &str) -> String {
     }
 }
 
-// 保存日志到数据库
-pub async fn save_log(log: RequestLog) {
+// 保存日志到数据库并发送事件
+pub async fn save_log(log: RequestLog, app_handle: Option<&tauri::AppHandle>) {
     if let Err(e) = crate::db::save_log_to_db(&log).await {
         log::error!("Failed to save log to database: {}", e);
     }
+
+    // 发送新日志事件到前端
+    if let Some(app) = app_handle {
+        if let Err(e) = app.emit("new-log", &log) {
+            log::error!("Failed to emit new-log event: {}", e);
+        }
+
+        // 发送统计数据更新事件（批量更新，避免过于频繁）
+        // 获取最新的统计数据并发送
+        if let Ok(stats) = crate::db::get_dashboard_stats().await {
+            if let Err(e) = app.emit("stats-update", &stats) {
+                log::error!("Failed to emit stats-update event: {}", e);
+            }
+        }
+    }
 }
 
-// 更新日志到数据库（用于流式响应的 Token 统计更新）
-pub async fn update_log(log: RequestLog) {
+// 更新日志到数据库（用于流式响应的 Token 统计更新）并发送事件
+pub async fn update_log(log: RequestLog, app_handle: Option<&tauri::AppHandle>) {
     if let Err(e) = crate::db::update_log_to_db(&log).await {
         log::error!("Failed to update log to database: {}", e);
+    }
+
+    // 发送日志更新事件到前端
+    if let Some(app) = app_handle {
+        if let Err(e) = app.emit("log-updated", &log) {
+            log::error!("Failed to emit log-updated event: {}", e);
+        }
+
+        // 发送统计数据更新事件
+        if let Ok(stats) = crate::db::get_dashboard_stats().await {
+            if let Err(e) = app.emit("stats-update", &stats) {
+                log::error!("Failed to emit stats-update event: {}", e);
+            }
+        }
     }
 }
 

@@ -109,6 +109,7 @@ pub async fn start_proxy_server(
     config: SharedConfigManager,
     initial_config: ProxyConfig,
     status_manager: ProxyStatusManager,
+    app_handle: tauri::AppHandle,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // 创建控制通道
     let (command_tx, mut command_rx) = mpsc::channel::<ProxyCommand>(10);
@@ -200,7 +201,7 @@ pub async fn start_proxy_server(
         // 创建应用
         let app = Router::new()
             .route("/v1/messages", post(handle_messages))
-            .with_state(config.clone());
+            .with_state((config.clone(), app_handle.clone()));
 
         // 创建关闭信号通道
         let (shutdown_tx, mut shutdown_rx) = mpsc::channel::<()>(1);

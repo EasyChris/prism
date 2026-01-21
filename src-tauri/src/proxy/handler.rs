@@ -11,7 +11,7 @@ use super::utils::convert_headers;
 
 /// 处理 /v1/messages 请求
 pub(super) async fn handle_messages(
-    State(config): State<SharedConfigManager>,
+    State((config, app_handle)): State<(SharedConfigManager, tauri::AppHandle)>,
     headers: HeaderMap,
     body: String,
 ) -> Result<Response, StatusCode> {
@@ -252,12 +252,13 @@ pub(super) async fn handle_messages(
 
         // 先保存基础日志（Token 为 0），后续会通过 UPDATE 更新
         let log_clone = request_log.clone();
+        let app_handle_clone = app_handle.clone();
         tokio::spawn(async move {
-            crate::logger::save_log(log_clone).await;
+            crate::logger::save_log(log_clone, Some(&app_handle_clone)).await;
         });
 
         // 传递 request_log 和 request_body 给 stream handler，它会在流结束后 UPDATE
-        return handle_stream_response(response, request_log, start_time, request_body_for_counting).await;
+        return handle_stream_response(response, request_log, start_time, request_body_for_counting, app_handle).await;
     }
 
     // 非流式响应，直接返回
@@ -286,6 +287,7 @@ pub(super) async fn handle_messages(
     let profile_name = profile.name.clone();
     let profile_api_base_url = profile.api_base_url.clone();
     let model_mapping_mode = profile.model_mapping_mode.clone();
+    let app_handle_clone = app_handle.clone();
 
     // 在后台异步解析 token 和保存日志，完全不阻塞响应返回
     tokio::spawn(async move {
@@ -389,7 +391,7 @@ pub(super) async fn handle_messages(
         request_log.error_message = error_message;
 
         // 保存日志
-        crate::logger::save_log(request_log).await;
+        crate::logger::save_log(request_log, Some(&app_handle_clone)).await;
     });
 
     // 立即返回响应，不等待 token 解析和日志保存

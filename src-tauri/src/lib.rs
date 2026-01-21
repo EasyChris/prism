@@ -114,11 +114,13 @@ pub fn run() {
       let config_clone = shared_config.clone();
       let proxy_status_manager_clone = proxy_status_manager.clone();
       let proxy_config_clone = proxy_config.clone();
+      let app_handle_clone = app.handle().clone();
       tauri::async_runtime::spawn(async move {
         if let Err(e) = proxy::start_proxy_server(
           config_clone,
           proxy_config_clone,
           proxy_status_manager_clone,
+          app_handle_clone,
         ).await {
           log::error!("Failed to start proxy server: {}", e);
           // 启动失败，确保状态为未运行

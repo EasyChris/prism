@@ -3,6 +3,7 @@ import * as api from "@/lib/api"
 import { ProfileSelector } from "@/components/ProfileSelector"
 import { SetupGuideModal } from "@/components/SetupGuideModal"
 import { ProfileRanking } from "@/components/ProfileRanking"
+import { useRealtimeStats } from "@/hooks/useRealtimeStats"
 
 export function Dashboard() {
   const [activeProfile, setActiveProfile] = useState<api.Profile | null>(null)
@@ -21,6 +22,13 @@ export function Dashboard() {
   const [proxyServerUrl, setProxyServerUrl] = useState<string>("")
   const [copySuccess, setCopySuccess] = useState(false)
   const [isSetupGuideOpen, setIsSetupGuideOpen] = useState(false)
+
+  // 实时监听统计数据更新
+  useRealtimeStats({
+    onStatsUpdate: (newStats) => {
+      setStats(newStats)
+    },
+  })
 
   // 格式化数字显示（K/M 单位）
   const formatNumber = (num: number): string => {
@@ -130,14 +138,7 @@ export function Dashboard() {
     loadStats()
     loadTokenStats()
     loadApiKeySettings()
-
-    // 每隔 2 秒刷新一次配置和统计数据（用于实时更新）
-    // 注意：不包括 Token 统计数据，Token 数据只在切换时间范围或 tab 切换时刷新
-    const interval = setInterval(() => {
-      loadActiveProfile()
-      loadStats()
-    }, 2000)
-    return () => clearInterval(interval)
+    // 移除轮询，使用实时事件更新
   }, [])
 
   // 当时间范围改变时，重新加载 Token 统计数据

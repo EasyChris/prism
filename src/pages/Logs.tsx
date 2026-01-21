@@ -1,15 +1,33 @@
 import { useEffect, useState } from "react"
 import { getLogs, RequestLog } from "../lib/api"
 import { LogDetailModal } from "../components/LogDetailModal"
+import { useRealtimeLog } from "../hooks/useRealtimeLog"
+
+const MAX_LOGS = 100 // 限制前端保存的日志数量
 
 export function Logs() {
   const [logs, setLogs] = useState<RequestLog[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedLog, setSelectedLog] = useState<RequestLog | null>(null)
+  const [realtimeEnabled, setRealtimeEnabled] = useState(true) // 实时更新开关
 
+  // 初始加载
   useEffect(() => {
     loadLogs()
   }, [])
+
+  // 实时监听日志事件
+  useRealtimeLog({
+    enabled: realtimeEnabled,
+    onNewLog: (log) => {
+      setLogs((prev) => [log, ...prev].slice(0, MAX_LOGS))
+    },
+    onLogUpdated: (log) => {
+      setLogs((prev) =>
+        prev.map((l) => (l.requestId === log.requestId ? log : l))
+      )
+    },
+  })
 
   const loadLogs = async () => {
     try {
@@ -57,6 +75,16 @@ export function Logs() {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">请求日志</h2>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setRealtimeEnabled(!realtimeEnabled)}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              realtimeEnabled
+                ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50"
+                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+            }`}
+          >
+            {realtimeEnabled ? "⏸ 暂停实时更新" : "▶️ 恢复实时更新"}
+          </button>
           <input
             type="text"
             placeholder="搜索日志..."
