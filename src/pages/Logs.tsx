@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react"
 import { getLogs, RequestLog } from "../lib/api"
+import { LogDetailModal } from "../components/LogDetailModal"
 
 export function Logs() {
   const [logs, setLogs] = useState<RequestLog[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedLog, setSelectedLog] = useState<RequestLog | null>(null)
 
   useEffect(() => {
     loadLogs()
@@ -109,18 +111,21 @@ export function Logs() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   状态
                 </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  操作
+                </th>
               </tr>
             </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
             {loading ? (
               <tr>
-                <td colSpan={10} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                <td colSpan={11} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                   加载中...
                 </td>
               </tr>
             ) : logs.length === 0 ? (
               <tr>
-                <td colSpan={10} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                <td colSpan={11} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                   暂无日志记录
                 </td>
               </tr>
@@ -149,10 +154,19 @@ export function Logs() {
                     )}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                    {log.inputTokens + log.outputTokens}
-                    <span className="text-gray-500 dark:text-gray-400 text-xs ml-1">
-                      ({log.inputTokens}/{log.outputTokens})
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span>
+                        {log.inputTokens + log.outputTokens}
+                        <span className="text-gray-500 dark:text-gray-400 text-xs ml-1">
+                          ({log.inputTokens}/{log.outputTokens})
+                        </span>
+                      </span>
+                      {log.outputTokens === 0 && (
+                        <span className="text-yellow-500 dark:text-yellow-400" title="输出 tokens 为 0，可能存在异常">
+                          ⚠️
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     {formatBytes(log.requestSizeBytes)}
@@ -174,6 +188,14 @@ export function Logs() {
                       {log.statusCode}
                     </span>
                   </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <button
+                      onClick={() => setSelectedLog(log)}
+                      className="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                    >
+                      查看详情
+                    </button>
+                  </td>
                 </tr>
               ))
             )}
@@ -181,6 +203,9 @@ export function Logs() {
         </table>
         </div>
       </div>
+
+      {/* 详情 Modal */}
+      <LogDetailModal log={selectedLog} onClose={() => setSelectedLog(null)} />
     </div>
   )
 }

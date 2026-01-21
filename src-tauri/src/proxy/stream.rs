@@ -28,6 +28,7 @@ struct TokenStats {
     cache_read_input_tokens: i32,
     has_usage: bool,  // 标记是否已经收集到 usage 信息
     output_text: String,  // 收集输出文本用于本地计数
+    full_response: String,  // 收集完整的响应数据用于调试
 }
 
 impl Stream for TokenCollectorStream {
@@ -54,6 +55,9 @@ impl Stream for TokenCollectorStream {
                         }
 
                         if let Ok(mut stats) = stats_clone.lock() {
+                            // 收集完整的响应数据
+                            stats.full_response.push_str(text);
+
                             for line in text.lines() {
                                 if line.starts_with("data: ") {
                                     let json_str = &line[6..];
@@ -252,6 +256,12 @@ pub(super) async fn handle_stream_response(
                 } else {
                     log::error!("Failed to initialize token counter");
                 }
+            }
+
+            // 如果 output_tokens 为 0，保存完整响应体用于调试
+            if log.output_tokens == 0 && !stats.full_response.is_empty() {
+                log::warn!("⚠️  Output tokens is 0, saving full response body for debugging");
+                log.response_body = Some(stats.full_response.clone());
             }
 
             // 输出流式响应的统计信息

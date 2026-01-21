@@ -20,8 +20,8 @@ pub async fn save_log_to_db(log: &RequestLog) -> Result<(), String> {
                 input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens,
                 duration_ms, upstream_duration_ms,
                 status_code, error_message, is_stream,
-                request_size_bytes, response_size_bytes
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)
+                request_size_bytes, response_size_bytes, response_body
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)
             "#,
             rusqlite::params![
                 &log.request_id,
@@ -43,6 +43,7 @@ pub async fn save_log_to_db(log: &RequestLog) -> Result<(), String> {
                 if log.is_stream { 1 } else { 0 },
                 log.request_size_bytes,
                 log.response_size_bytes,
+                &log.response_body,
             ],
         )
         .map_err(|e| format!("Failed to insert log: {}", e))?;
@@ -71,8 +72,9 @@ pub async fn update_log_to_db(log: &RequestLog) -> Result<(), String> {
                 output_tokens = ?2,
                 cache_creation_input_tokens = ?3,
                 cache_read_input_tokens = ?4,
-                duration_ms = ?5
-            WHERE request_id = ?6
+                duration_ms = ?5,
+                response_body = ?6
+            WHERE request_id = ?7
             "#,
             rusqlite::params![
                 log.input_tokens,
@@ -80,6 +82,7 @@ pub async fn update_log_to_db(log: &RequestLog) -> Result<(), String> {
                 log.cache_creation_input_tokens,
                 log.cache_read_input_tokens,
                 log.duration_ms,
+                &log.response_body,
                 &log.request_id,
             ],
         )
@@ -109,7 +112,7 @@ pub async fn get_logs_from_db(limit: usize, offset: usize) -> Result<Vec<Request
                        input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens,
                        duration_ms, upstream_duration_ms,
                        status_code, error_message, is_stream,
-                       request_size_bytes, response_size_bytes
+                       request_size_bytes, response_size_bytes, response_body
                 FROM request_logs
                 ORDER BY timestamp DESC
                 LIMIT ?1 OFFSET ?2
@@ -139,6 +142,7 @@ pub async fn get_logs_from_db(limit: usize, offset: usize) -> Result<Vec<Request
                     is_stream: row.get::<_, i32>(16)? != 0,
                     request_size_bytes: row.get(17)?,
                     response_size_bytes: row.get(18)?,
+                    response_body: row.get(19)?,
                 })
             })
             .map_err(|e| format!("Failed to query logs: {}", e))?

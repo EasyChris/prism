@@ -75,6 +75,7 @@ pub struct RequestLog {
     pub is_stream: bool,
     pub request_size_bytes: Option<i64>,    // 请求体大小
     pub response_size_bytes: Option<i64>,   // 响应体大小
+    pub response_body: Option<String>,      // 响应体内容（仅在 output_tokens=0 时记录，用于调试）
 }
 
 impl RequestLog {
@@ -118,6 +119,7 @@ impl RequestLog {
             is_stream: false,
             request_size_bytes: Some(request_size as i64),
             response_size_bytes: None,
+            response_body: None,
         }
     }
 }

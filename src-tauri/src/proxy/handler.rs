@@ -289,51 +289,75 @@ pub(super) async fn handle_messages(
 
     // 在后台异步解析 token 和保存日志，完全不阻塞响应返回
     tokio::spawn(async move {
-        let (input_tokens, output_tokens) = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&response_body_clone) {
-            // 提取响应内容
-            let response_text = json.get("content")
-                .and_then(|c| c.as_array())
-                .and_then(|arr| arr.first())
-                .and_then(|item| item.get("text"))
-                .and_then(|t| t.as_str())
-                .unwrap_or("");
+        let (input_tokens, output_tokens, response_body_to_save, error_message) = if let Ok(json) = serde_json::from_str::<serde_json::Value>(&response_body_clone) {
+            // 检查是否是错误响应
+            if status.is_client_error() || status.is_server_error() {
+                // 提取错误信息
+                let error_msg = json.get("error")
+                    .and_then(|e| e.get("message"))
+                    .and_then(|m| m.as_str())
+                    .or_else(|| json.get("message").and_then(|m| m.as_str()))
+                    .unwrap_or("Unknown error");
 
-            // 输出响应内容（截断显示，使用字节数粗略判断避免遍历整个字符串）
-            if !response_text.is_empty() {
-                let response_preview = if response_text.len() > 900 {
-                    // 字节数超过 900，安全截取前 300 个字符
-                    response_text.chars().take(300).collect::<String>() + "..."
+                log::error!("❌ Error response: {}", error_msg);
+
+                // 错误响应保存完整响应体
+                (0, 0, Some(response_body_clone.clone()), Some(error_msg.to_string()))
+            } else {
+                // 正常响应，提取响应内容
+                let response_text = json.get("content")
+                    .and_then(|c| c.as_array())
+                    .and_then(|arr| arr.first())
+                    .and_then(|item| item.get("text"))
+                    .and_then(|t| t.as_str())
+                    .unwrap_or("");
+
+                // 输出响应内容（截断显示，使用字节数粗略判断避免遍历整个字符串）
+                if !response_text.is_empty() {
+                    let response_preview = if response_text.len() > 900 {
+                        // 字节数超过 900，安全截取前 300 个字符
+                        response_text.chars().take(300).collect::<String>() + "..."
+                    } else {
+                        response_text.to_string()
+                    };
+                    log::info!("📝 Response: {}", response_preview);
+                }
+
+                // 尝试多种可能的 token 字段路径（兼容不同供应商）
+                let input = json.get("usage")
+                    .and_then(|u| u.get("input_tokens"))
+                    .and_then(|t| t.as_i64())
+                    .or_else(|| {
+                        json.get("usage")
+                            .and_then(|u| u.get("prompt_tokens"))
+                            .and_then(|t| t.as_i64())
+                    })
+                    .unwrap_or(0) as i32;
+
+                let output = json.get("usage")
+                    .and_then(|u| u.get("output_tokens"))
+                    .and_then(|t| t.as_i64())
+                    .or_else(|| {
+                        json.get("usage")
+                            .and_then(|u| u.get("completion_tokens"))
+                            .and_then(|t| t.as_i64())
+                    })
+                    .unwrap_or(0) as i32;
+
+                // 如果 output_tokens 为 0，保存完整响应体用于调试
+                let body_to_save = if output == 0 {
+                    log::warn!("⚠️  Output tokens is 0, saving full response body for debugging");
+                    Some(response_body_clone.clone())
                 } else {
-                    response_text.to_string()
+                    None
                 };
-                log::info!("📝 Response: {}", response_preview);
+
+                (input, output, body_to_save, None)
             }
-
-            // 尝试多种可能的 token 字段路径（兼容不同供应商）
-            let input = json.get("usage")
-                .and_then(|u| u.get("input_tokens"))
-                .and_then(|t| t.as_i64())
-                .or_else(|| {
-                    json.get("usage")
-                        .and_then(|u| u.get("prompt_tokens"))
-                        .and_then(|t| t.as_i64())
-                })
-                .unwrap_or(0) as i32;
-
-            let output = json.get("usage")
-                .and_then(|u| u.get("output_tokens"))
-                .and_then(|t| t.as_i64())
-                .or_else(|| {
-                    json.get("usage")
-                        .and_then(|u| u.get("completion_tokens"))
-                        .and_then(|t| t.as_i64())
-                })
-                .unwrap_or(0) as i32;
-
-            (input, output)
         } else {
-            log::warn!("Failed to parse response body as JSON");
-            (0, 0)
+            log::warn!("Failed to parse response body as JSON, saving full response body for debugging");
+            // JSON 解析失败，保存完整响应体
+            (0, 0, Some(response_body_clone.clone()), Some("Failed to parse response as JSON".to_string()))
         };
 
         // 计算耗时
@@ -361,6 +385,8 @@ pub(super) async fn handle_messages(
         request_log.status_code = status.as_u16() as i32;
         request_log.is_stream = false;
         request_log.response_size_bytes = Some(response_size as i64);
+        request_log.response_body = response_body_to_save;
+        request_log.error_message = error_message;
 
         // 保存日志
         crate::logger::save_log(request_log).await;

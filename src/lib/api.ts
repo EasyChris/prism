@@ -123,6 +123,7 @@ export interface RequestLog {
   isStream: boolean
   requestSizeBytes?: number
   responseSizeBytes?: number
+  responseBody?: string  // 响应体内容（仅在 output_tokens=0 时记录，用于调试）
 }
 
 // 获取日志列表

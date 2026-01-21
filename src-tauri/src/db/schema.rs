@@ -55,12 +55,33 @@ pub async fn init_database() -> Result<(), String> {
             error_message TEXT,
             is_stream INTEGER NOT NULL,
             request_size_bytes INTEGER,
-            response_size_bytes INTEGER
+            response_size_bytes INTEGER,
+            response_body TEXT
         )
         "#,
         [],
     )
     .map_err(|e| format!("Failed to create table: {}", e))?;
+
+    // 迁移：添加 response_body 字段（如果不存在）
+    // 检查字段是否存在
+    let column_exists: bool = conn
+        .query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('request_logs') WHERE name='response_body'",
+            [],
+            |row| row.get::<_, i32>(0).map(|count| count > 0),
+        )
+        .unwrap_or(false);
+
+    if !column_exists {
+        log::info!("Adding response_body column to request_logs table");
+        conn.execute(
+            "ALTER TABLE request_logs ADD COLUMN response_body TEXT",
+            [],
+        )
+        .map_err(|e| format!("Failed to add response_body column: {}", e))?;
+        log::info!("Successfully added response_body column");
+    }
 
     // 创建索引以提高查询性能
     conn.execute(
