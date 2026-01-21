@@ -375,7 +375,7 @@ export function Dashboard() {
                           {cacheTokens > 0 && (
                             <>
                               <br/>
-                              <span className="text-amber-400">{t('tokenUsage.cacheTooltip', { count: cacheTokens.toLocaleString() })}</span>
+                              <span className="text-amber-400">{t('tokenUsage.cacheTooltip', { count: cacheTokens })}</span>
                             </>
                           )}
                         </div>
