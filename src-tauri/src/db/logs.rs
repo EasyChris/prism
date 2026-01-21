@@ -107,14 +107,18 @@ pub async fn get_logs_from_db(limit: usize, offset: usize) -> Result<Vec<Request
         let mut stmt = conn
             .prepare(
                 r#"
-                SELECT request_id, timestamp, profile_id, profile_name, provider,
-                       original_model, model_mode, forwarded_model,
-                       input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens,
-                       duration_ms, upstream_duration_ms,
-                       status_code, error_message, is_stream,
-                       request_size_bytes, response_size_bytes, response_body
-                FROM request_logs
-                ORDER BY timestamp DESC
+                SELECT
+                    rl.request_id, rl.timestamp, rl.profile_id,
+                    COALESCE(p.name, '已删除的配置 (' || rl.profile_id || ')') as profile_name,
+                    rl.provider,
+                    rl.original_model, rl.model_mode, rl.forwarded_model,
+                    rl.input_tokens, rl.output_tokens, rl.cache_creation_input_tokens, rl.cache_read_input_tokens,
+                    rl.duration_ms, rl.upstream_duration_ms,
+                    rl.status_code, rl.error_message, rl.is_stream,
+                    rl.request_size_bytes, rl.response_size_bytes, rl.response_body
+                FROM request_logs rl
+                LEFT JOIN profiles p ON rl.profile_id = p.id
+                ORDER BY rl.timestamp DESC
                 LIMIT ?1 OFFSET ?2
                 "#,
             )

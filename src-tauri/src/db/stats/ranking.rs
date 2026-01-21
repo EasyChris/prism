@@ -63,27 +63,30 @@ fn query_profile_rankings(
 ) -> Result<Vec<(String, String, i32)>, String> {
     // 构建 SQL 查询
     // 只按 profile_id 分组，避免同一配置因名称变化而重复
-    // 使用子查询获取每个 profile_id 的最新 profile_name
+    // 使用 LEFT JOIN profiles 表获取当前配置名称
+    // 如果配置已删除，显示 "已删除的配置 (ID: xxx)"
     let sql = if timestamp_filter.is_some() {
         r#"
         SELECT
-            profile_id,
-            (SELECT profile_name FROM request_logs WHERE profile_id = rl.profile_id ORDER BY timestamp DESC LIMIT 1) as profile_name,
-            SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens) as total_tokens
+            rl.profile_id,
+            COALESCE(p.name, '已删除的配置 (' || rl.profile_id || ')') as profile_name,
+            SUM(rl.input_tokens + rl.output_tokens + rl.cache_creation_input_tokens + rl.cache_read_input_tokens) as total_tokens
         FROM request_logs rl
-        WHERE timestamp >= ?1
-        GROUP BY profile_id
+        LEFT JOIN profiles p ON rl.profile_id = p.id
+        WHERE rl.timestamp >= ?1
+        GROUP BY rl.profile_id
         ORDER BY total_tokens DESC
         LIMIT ?2
         "#
     } else {
         r#"
         SELECT
-            profile_id,
-            (SELECT profile_name FROM request_logs WHERE profile_id = rl.profile_id ORDER BY timestamp DESC LIMIT 1) as profile_name,
-            SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens) as total_tokens
+            rl.profile_id,
+            COALESCE(p.name, '已删除的配置 (' || rl.profile_id || ')') as profile_name,
+            SUM(rl.input_tokens + rl.output_tokens + rl.cache_creation_input_tokens + rl.cache_read_input_tokens) as total_tokens
         FROM request_logs rl
-        GROUP BY profile_id
+        LEFT JOIN profiles p ON rl.profile_id = p.id
+        GROUP BY rl.profile_id
         ORDER BY total_tokens DESC
         LIMIT ?1
         "#
