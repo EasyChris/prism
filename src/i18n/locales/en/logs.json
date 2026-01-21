@@ -1,0 +1,38 @@
+{
+  "title": "Request Logs",
+  "pauseRealtime": "⏸ Pause Real-time Updates",
+  "resumeRealtime": "▶️ Resume Real-time Updates",
+  "searchPlaceholder": "Search logs...",
+  "table": {
+    "time": "Time",
+    "profile": "Profile",
+    "originalModel": "Original Model",
+    "processingMode": "Processing Mode",
+    "forwardedModel": "Forwarded Model",
+    "tokens": "Tokens",
+    "requestSize": "Request Size",
+    "duration": "Duration",
+    "upstreamDuration": "Upstream Duration",
+    "status": "Status"
+  },
+  "detail": {
+    "title": "Request Details",
+    "basicInfo": "Basic Information",
+    "requestTime": "Request Time:",
+    "profileName": "Profile Name:",
+    "originalModel": "Original Model:",
+    "forwardedModel": "Forwarded Model:",
+    "processingMode": "Processing Mode:",
+    "statusCode": "Status Code:",
+    "tokenStats": "Token Statistics",
+    "inputTokens": "Input Tokens:",
+    "outputTokens": "Output Tokens:",
+    "total": "Total:",
+    "duration": "Duration:",
+    "responseBody": "Response Body",
+    "errorInfo": "Error Information"
+  },
+  "warnings": {
+    "zeroOutputTokens": "Output tokens is 0, possible anomaly"
+  }
+}

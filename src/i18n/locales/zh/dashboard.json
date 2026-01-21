@@ -1,0 +1,40 @@
+{
+  "title": "仪表盘",
+  "stats": {
+    "totalProfiles": "总配置数",
+    "serviceStatus": "服务状态",
+    "todayRequests": "今日请求",
+    "todayTokens": "今日 Token"
+  },
+  "currentProfile": {
+    "title": "当前配置",
+    "noProfile": "未选择配置"
+  },
+  "apiKey": {
+    "title": "代理服务 API 密钥",
+    "description": "说明",
+    "placeholder": "点击刷新生成",
+    "refreshTitle": "刷新密钥"
+  },
+  "tokenUsage": {
+    "title": "Token 使用量",
+    "timeRange": {
+      "hour": "小时",
+      "day": "天",
+      "week": "周",
+      "month": "月"
+    },
+    "legend": {
+      "regular": "常规 Token",
+      "cache": "缓存命中"
+    },
+    "peak": "峰值",
+    "cache": "缓存",
+    "cacheTooltip": "缓存: {{count}} tokens"
+  },
+  "ranking": {
+    "title": "配置消耗排名",
+    "noData": "暂无消耗数据",
+    "startUsing": "开始使用配置后将显示排名"
+  }
+}

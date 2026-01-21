@@ -1,0 +1,58 @@
+{
+  "app": {
+    "name": "Prism Hub"
+  },
+  "actions": {
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "copy": "Copy",
+    "copySuccess": "Copied to clipboard",
+    "copyFailed": "Copy failed",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing...",
+    "export": "Export",
+    "import": "Import",
+    "search": "Search",
+    "loading": "Loading...",
+    "viewDetails": "View Details",
+    "activate": "Activate",
+    "duplicate": "Duplicate",
+    "close": "Close",
+    "understand": "Got it"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "running": "Running",
+    "stopped": "Stopped",
+    "success": "Success",
+    "error": "Error",
+    "current": "Current"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "Follow System",
+    "toggleToLight": "Switch to light mode",
+    "toggleToDark": "Switch to dark mode"
+  },
+  "language": {
+    "zh": "中文",
+    "en": "English",
+    "toggle": "Toggle Language"
+  },
+  "empty": {
+    "noData": "No data available",
+    "noRecords": "No records"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "profiles": "Profiles",
+    "logs": "Logs",
+    "settings": "Settings"
+  }
+}

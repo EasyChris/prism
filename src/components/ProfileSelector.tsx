@@ -1,6 +1,7 @@
 import { Fragment } from 'react'
 import { Listbox, Transition } from '@headlessui/react'
 import { Check, ChevronsUpDown, Plus } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import * as api from '@/lib/api'
 
 interface ProfileSelectorProps {
@@ -16,6 +17,8 @@ export function ProfileSelector({
   onProfileChange,
   onAddProfile,
 }: ProfileSelectorProps) {
+  const { t } = useTranslation('profiles')
+
   // 如果没有配置，显示特殊状态
   if (profiles.length === 0) {
     return (
@@ -24,7 +27,7 @@ export function ProfileSelector({
         className="w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-700 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all group"
       >
         <span className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-          暂无配置，点击添加
+          {t('noProfileSelected')}
         </span>
         <Plus className="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" />
       </button>
@@ -40,11 +43,11 @@ export function ProfileSelector({
               <div>
                 <div className="font-medium text-sm text-gray-900 dark:text-white leading-tight">{activeProfile.name}</div>
                 <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-tight">
-                  {extractProvider(activeProfile.apiBaseUrl)} · {activeProfile.overrideModel || '透传模式'}
+                  {extractProvider(activeProfile.apiBaseUrl)} · {activeProfile.overrideModel || t('mappingMode.passthrough')}
                 </div>
               </div>
             ) : (
-              <span className="text-sm text-gray-500 dark:text-gray-400">未激活配置</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">{t('noProfileSelected')}</span>
             )}
           </span>
           <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5">
@@ -74,7 +77,7 @@ export function ProfileSelector({
                     <div className={`block ${selected ? 'font-medium' : 'font-normal'}`}>
                       <div className="text-sm leading-tight">{profile.name}</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-tight">
-                        {extractProvider(profile.apiBaseUrl)} · {profile.overrideModel || '透传模式'}
+                        {extractProvider(profile.apiBaseUrl)} · {profile.overrideModel || t('mappingMode.passthrough')}
                       </div>
                     </div>
                     {selected && (
@@ -97,7 +100,7 @@ export function ProfileSelector({
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
               >
                 <Plus className="w-4 h-4" />
-                <span>添加新配置</span>
+                <span>{t('addNewProfile')}</span>
               </button>
             </div>
           </Listbox.Options>

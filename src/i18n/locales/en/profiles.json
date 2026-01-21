@@ -1,0 +1,58 @@
+{
+  "title": "Profile Management",
+  "addProfile": "Add Profile",
+  "editProfile": "Edit Profile",
+  "noProfiles": "No profiles",
+  "addFirstProfile": "Add your first profile",
+  "addNewProfile": "Add New Profile",
+  "noProfileSelected": "No profile selected, click to add",
+  "form": {
+    "name": "Profile Name",
+    "namePlaceholder": "e.g., Default Profile",
+    "apiBaseUrl": "API Base URL",
+    "apiKey": "API Key",
+    "apiKeyPlaceholder": "sk-ant-...",
+    "showApiKey": "Show API Key",
+    "hideApiKey": "Hide API Key",
+    "modelMappingMode": "Model Mapping Mode",
+    "targetModel": "Target Model",
+    "targetModelPlaceholder": "e.g., glm-4-plus or deepseek-chat",
+    "required": "*"
+  },
+  "mappingMode": {
+    "passthrough": "Passthrough Mode",
+    "override": "Override Mode",
+    "map": "Mapping Mode",
+    "passthroughDesc": "Use the original model from the request without any modifications. Suitable for direct integration with Anthropic API or compatible services.",
+    "overrideDesc": "Force the use of a specified target model, ignoring the model parameter in the request. Suitable for unified use of a specific model.",
+    "mapDesc": "Transform models based on mapping rules. You can specify different target models for different original models.",
+    "overrideLabel": "Override → {{model}}",
+    "mapLabel": "Mapping Mode ({{count}} rules)",
+    "unknown": "Unknown"
+  },
+  "mappingRules": {
+    "title": "Mapping Rules:",
+    "useRegex": "Use regular expressions for matching",
+    "regexExample": "(e.g., claude-.*-opus.* matches all models containing opus)",
+    "regexMatch": "Regex Match",
+    "exactMatch": "Exact Match",
+    "addRule": "Add Rule",
+    "deleteRule": "Delete"
+  },
+  "actions": {
+    "activated": "Activated",
+    "duplicateSuffix": " Copy"
+  },
+  "deleteConfirm": {
+    "title": "Confirm Delete",
+    "message": "Are you sure you want to delete profile \"{{name}}\"? This action cannot be undone."
+  },
+  "errors": {
+    "saveFailed": "Failed to save profile: ",
+    "duplicateFailed": "Failed to duplicate profile: ",
+    "deleteFailed": "Failed to delete profile: ",
+    "activateFailed": "Failed to activate profile: ",
+    "overrideModelRequired": "Target model is required in override mode",
+    "regexSyntaxError": "Regular expression syntax error"
+  }
+}

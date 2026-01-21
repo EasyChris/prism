@@ -1,6 +1,8 @@
 import { ReactNode } from "react"
 import { TabNavigation } from "./TabNavigation"
 import { useTheme } from "@/contexts/ThemeContext"
+import { useLanguage } from "@/contexts/LanguageContext"
+import { useTranslation } from "react-i18next"
 
 interface LayoutProps {
   children: ReactNode
@@ -9,14 +11,16 @@ interface LayoutProps {
 }
 
 const tabs = [
-  { id: "dashboard", label: "仪表盘" },
-  { id: "profiles", label: "配置管理" },
-  { id: "logs", label: "请求日志" },
-  { id: "settings", label: "设置" },
+  { id: "dashboard", label: "nav.dashboard" },
+  { id: "profiles", label: "nav.profiles" },
+  { id: "logs", label: "nav.logs" },
+  { id: "settings", label: "nav.settings" },
 ]
 
 export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
   const { theme, toggleTheme } = useTheme()
+  const { language, toggleLanguage } = useLanguage()
+  const { t } = useTranslation('common')
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
@@ -26,7 +30,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
           <div className="flex items-center justify-between">
             {/* Logo */}
             <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Prism Hub
+              {t('app.name')}
             </h1>
 
             {/* Tab Navigation */}
@@ -37,12 +41,36 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
             />
 
             {/* Right Actions */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              {/* Language Toggle Button */}
+              <button
+                onClick={toggleLanguage}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-1.5"
+                title={t('language.toggle')}
+              >
+                <svg
+                  className="w-5 h-5 text-gray-600 dark:text-gray-300"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                  />
+                </svg>
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                  {language === 'zh' ? 'EN' : '中'}
+                </span>
+              </button>
+
               {/* Theme Toggle Button */}
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                title={theme === 'light' ? '切换到暗色模式' : '切换到亮色模式'}
+                title={theme === 'light' ? t('theme.toggleToDark') : t('theme.toggleToLight')}
               >
                 {theme === 'light' ? (
                   // 月亮图标 (暗色模式)

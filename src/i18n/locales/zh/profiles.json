@@ -1,0 +1,58 @@
+{
+  "title": "配置管理",
+  "addProfile": "添加配置",
+  "editProfile": "编辑配置",
+  "noProfiles": "暂无配置",
+  "addFirstProfile": "添加第一个配置",
+  "addNewProfile": "添加新配置",
+  "noProfileSelected": "暂无配置，点击添加",
+  "form": {
+    "name": "配置名称",
+    "namePlaceholder": "例如：默认配置",
+    "apiBaseUrl": "API Base URL",
+    "apiKey": "API Key",
+    "apiKeyPlaceholder": "sk-ant-...",
+    "showApiKey": "显示 API Key",
+    "hideApiKey": "隐藏 API Key",
+    "modelMappingMode": "模型映射模式",
+    "targetModel": "目标模型",
+    "targetModelPlaceholder": "例如：glm-4-plus 或 deepseek-chat",
+    "required": "*"
+  },
+  "mappingMode": {
+    "passthrough": "透传模式",
+    "override": "覆盖模式",
+    "map": "映射模式",
+    "passthroughDesc": "使用请求中的原始模型，不做任何修改。适合直接对接 Anthropic API 或兼容服务。",
+    "overrideDesc": "强制使用指定的目标模型，忽略请求中的模型参数。适合统一使用某个特定模型。",
+    "mapDesc": "根据映射规则表转换模型。可以为不同的原始模型指定不同的目标模型。",
+    "overrideLabel": "覆盖 → {{model}}",
+    "mapLabel": "映射模式 ({{count}} 条规则)",
+    "unknown": "未知"
+  },
+  "mappingRules": {
+    "title": "映射规则：",
+    "useRegex": "使用正则表达式匹配",
+    "regexExample": "(如: claude-.*-opus.* 匹配所有包含 opus 的模型)",
+    "regexMatch": "正则匹配",
+    "exactMatch": "精确匹配",
+    "addRule": "添加",
+    "deleteRule": "删除"
+  },
+  "actions": {
+    "activated": "已激活",
+    "duplicateSuffix": " 副本"
+  },
+  "deleteConfirm": {
+    "title": "确认删除",
+    "message": "确定要删除配置 \"{{name}}\" 吗？此操作无法撤销。"
+  },
+  "errors": {
+    "saveFailed": "保存配置失败：",
+    "duplicateFailed": "复制配置失败：",
+    "deleteFailed": "删除配置失败：",
+    "activateFailed": "激活配置失败：",
+    "overrideModelRequired": "覆盖模式下必须指定目标模型",
+    "regexSyntaxError": "正则表达式语法错误"
+  }
+}

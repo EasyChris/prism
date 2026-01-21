@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import { Modal } from "@/components/Modal"
 import { ProfileForm } from "@/components/ProfileForm"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
@@ -7,6 +8,7 @@ import * as api from "@/lib/api"
 import type { Profile } from "@/lib/api"
 
 export function Profiles() {
+  const { t } = useTranslation('profiles')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -60,20 +62,20 @@ export function Profiles() {
       }
     } catch (error) {
       console.error("Failed to save profile:", error)
-      alert("保存配置失败：" + error)
+      alert(t('errors.saveFailed') + error)
     }
   }
 
   const handleDuplicateProfile = async (profile: Profile) => {
     try {
       // 生成新的配置名称
-      let newName = `${profile.name} - 副本`
+      let newName = `${profile.name}${t('actions.duplicateSuffix')}`
       let counter = 1
 
       // 检查名称是否重复，如果重复则添加数字后缀
       while (profiles.some(p => p.name === newName)) {
         counter++
-        newName = `${profile.name} - 副本 ${counter}`
+        newName = `${profile.name}${t('actions.duplicateSuffix')} ${counter}`
       }
 
       // 创建新配置（深拷贝原配置数据，但不包含 id 和 isActive）
@@ -97,7 +99,7 @@ export function Profiles() {
       }
     } catch (error) {
       console.error("Failed to duplicate profile:", error)
-      alert("复制配置失败：" + error)
+      alert(t('errors.duplicateFailed') + error)
     }
   }
 
@@ -122,7 +124,7 @@ export function Profiles() {
         }
       } catch (error) {
         console.error("Failed to delete profile:", error)
-        alert("删除配置失败：" + error)
+        alert(t('errors.deleteFailed') + error)
       }
     }
   }
@@ -140,7 +142,7 @@ export function Profiles() {
       }
     } catch (error) {
       console.error("Failed to activate profile:", error)
-      alert("激活配置失败：" + error)
+      alert(t('errors.activateFailed') + error)
     }
   }
 
@@ -173,14 +175,14 @@ export function Profiles() {
   const getMappingModeText = (profile: Profile): string => {
     switch (profile.modelMappingMode) {
       case 'passthrough':
-        return '透传模式'
+        return t('mappingMode.passthrough')
       case 'override':
-        return `覆盖 → ${profile.overrideModel || '未设置'}`
+        return t('mappingMode.overrideLabel', { model: profile.overrideModel || t('mappingMode.unknown') })
       case 'map':
         const count = profile.modelMappings.length
-        return `映射模式 (${count} 条规则)`
+        return t('mappingMode.mapLabel', { count })
       default:
-        return '未知'
+        return t('mappingMode.unknown')
     }
   }
 
@@ -188,24 +190,24 @@ export function Profiles() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">配置管理</h2>
+        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">{t('title')}</h2>
         <button
           onClick={handleAddProfile}
           className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
         >
-          + 添加配置
+          + {t('addProfile')}
         </button>
       </div>
 
       {/* Profiles Grid - 卡片布局 */}
       {profiles.length === 0 ? (
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600">
-          <p className="text-gray-500 dark:text-gray-400 mb-4">暂无配置</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">{t('noProfiles')}</p>
           <button
             onClick={handleAddProfile}
             className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
           >
-            添加第一个配置
+            {t('addFirstProfile')}
           </button>
         </div>
       ) : (
@@ -238,7 +240,7 @@ export function Profiles() {
                   {profile.isActive && (
                     <span className="ml-2 flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 rounded-full flex-shrink-0">
                       <CheckCircle2 size={12} />
-                      当前
+                      {t('common:status.current')}
                     </span>
                   )}
                 </div>
@@ -251,33 +253,33 @@ export function Profiles() {
                       className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
                     >
                       <Circle size={14} />
-                      激活
+                      {t('common:actions.activate')}
                     </button>
                   ) : (
                     <div className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-green-600 dark:text-green-400">
                       <CheckCircle2 size={14} />
-                      已激活
+                      {t('actions.activated')}
                     </div>
                   )}
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleEditProfile(profile)}
                       className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
-                      title="编辑"
+                      title={t('common:actions.edit')}
                     >
                       <Edit2 size={16} />
                     </button>
                     <button
                       onClick={() => handleDuplicateProfile(profile)}
                       className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
-                      title="复制"
+                      title={t('common:actions.duplicate')}
                     >
                       <Copy size={16} />
                     </button>
                     <button
                       onClick={() => handleDeleteProfile(profile)}
                       className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                      title="删除"
+                      title={t('common:actions.delete')}
                     >
                       <Trash2 size={16} />
                     </button>
@@ -293,7 +295,7 @@ export function Profiles() {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingProfile ? "编辑配置" : "添加配置"}
+        title={editingProfile ? t('editProfile') : t('addProfile')}
       >
         <ProfileForm
           profile={editingProfile || undefined}
@@ -307,8 +309,8 @@ export function Profiles() {
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
         onConfirm={confirmDelete}
-        title="确认删除"
-        message={`确定要删除配置 "${deletingProfile?.name}" 吗？此操作无法撤销。`}
+        title={t('deleteConfirm.title')}
+        message={t('deleteConfirm.message', { name: deletingProfile?.name })}
       />
     </div>
   )

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import * as api from "@/lib/api"
 
 interface ProfileRankingProps {
@@ -10,6 +11,7 @@ interface ProfileRankingProps {
 export function ProfileRanking({ timeRange, limit = 10, className = "" }: ProfileRankingProps) {
   const [rankings, setRankings] = useState<api.ProfileConsumption[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const { t } = useTranslation('dashboard')
 
   // 格式化数字显示（K/M 单位）
   const formatNumber = (num: number): string => {
@@ -103,7 +105,7 @@ export function ProfileRanking({ timeRange, limit = 10, className = "" }: Profil
           }
         }
       `}</style>
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">配置消耗排名</h3>
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">{t('ranking.title')}</h3>
 
       {isLoading ? (
         <div className="space-y-2">
@@ -123,8 +125,8 @@ export function ProfileRanking({ timeRange, limit = 10, className = "" }: Profil
       ) : rankings.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-32 text-center">
           <div className="text-3xl mb-1.5">📊</div>
-          <div className="text-gray-500 dark:text-gray-400 text-xs font-medium">暂无消耗数据</div>
-          <div className="text-gray-400 dark:text-gray-500 text-[10px] mt-0.5">开始使用配置后将显示排名</div>
+          <div className="text-gray-500 dark:text-gray-400 text-xs font-medium">{t('ranking.noData')}</div>
+          <div className="text-gray-400 dark:text-gray-500 text-[10px] mt-0.5">{t('ranking.startUsing')}</div>
         </div>
       ) : (
         <div className="space-y-2">

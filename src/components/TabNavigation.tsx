@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils"
+import { useTranslation } from "react-i18next"
 
 interface Tab {
   id: string
@@ -12,6 +13,8 @@ interface TabNavigationProps {
 }
 
 export function TabNavigation({ tabs, activeTab, onTabChange }: TabNavigationProps) {
+  const { t } = useTranslation()
+
   return (
     <div className="flex items-center gap-2">
       {tabs.map((tab) => (
@@ -25,7 +28,7 @@ export function TabNavigation({ tabs, activeTab, onTabChange }: TabNavigationPro
               : "bg-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
           )}
         >
-          {tab.label}
+          {t(tab.label)}
         </button>
       ))}
     </div>

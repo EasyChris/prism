@@ -1,0 +1,38 @@
+{
+  "title": "请求日志",
+  "pauseRealtime": "⏸ 暂停实时更新",
+  "resumeRealtime": "▶️ 恢复实时更新",
+  "searchPlaceholder": "搜索日志...",
+  "table": {
+    "time": "时间",
+    "profile": "配置",
+    "originalModel": "原始模型",
+    "processingMode": "处理模式",
+    "forwardedModel": "转发模型",
+    "tokens": "Token",
+    "requestSize": "请求大小",
+    "duration": "耗时",
+    "upstreamDuration": "上游耗时",
+    "status": "状态"
+  },
+  "detail": {
+    "title": "请求详情",
+    "basicInfo": "基本信息",
+    "requestTime": "请求时间：",
+    "profileName": "配置名称：",
+    "originalModel": "原始模型：",
+    "forwardedModel": "转发模型：",
+    "processingMode": "处理模式：",
+    "statusCode": "状态码：",
+    "tokenStats": "Token 统计",
+    "inputTokens": "输入 Tokens：",
+    "outputTokens": "输出 Tokens：",
+    "total": "总计：",
+    "duration": "耗时：",
+    "responseBody": "响应体",
+    "errorInfo": "错误信息"
+  },
+  "warnings": {
+    "zeroOutputTokens": "输出 tokens 为 0，可能存在异常"
+  }
+}

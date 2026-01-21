@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { getLogs, RequestLog } from "../lib/api"
 import { LogDetailModal } from "../components/LogDetailModal"
 import { useRealtimeLog } from "../hooks/useRealtimeLog"
@@ -6,6 +7,7 @@ import { useRealtimeLog } from "../hooks/useRealtimeLog"
 const MAX_LOGS = 100 // 限制前端保存的日志数量
 
 export function Logs() {
+  const { t } = useTranslation('logs')
   const [logs, setLogs] = useState<RequestLog[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedLog, setSelectedLog] = useState<RequestLog | null>(null)
@@ -73,7 +75,7 @@ export function Logs() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">请求日志</h2>
+        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">{t('title')}</h2>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setRealtimeEnabled(!realtimeEnabled)}
@@ -83,11 +85,11 @@ export function Logs() {
                 : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
             }`}
           >
-            {realtimeEnabled ? "⏸ 暂停实时更新" : "▶️ 恢复实时更新"}
+            {realtimeEnabled ? t('pauseRealtime') : t('resumeRealtime')}
           </button>
           <input
             type="text"
-            placeholder="搜索日志..."
+            placeholder={t('searchPlaceholder')}
             className="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
           />
           <button
@@ -95,10 +97,10 @@ export function Logs() {
             disabled={loading}
             className="px-4 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "刷新中..." : "刷新"}
+            {loading ? t('common:actions.refreshing') : t('common:actions.refresh')}
           </button>
           <button className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-            导出
+            {t('common:actions.export')}
           </button>
         </div>
       </div>
@@ -110,37 +112,37 @@ export function Logs() {
             <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  时间
+                  {t('table.time')}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  配置
+                  {t('table.profile')}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  原始模型
+                  {t('table.originalModel')}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  处理模式
+                  {t('table.processingMode')}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  转发模型
+                  {t('table.forwardedModel')}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Token
+                  {t('table.tokens')}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  请求大小
+                  {t('table.requestSize')}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  耗时
+                  {t('table.duration')}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  上游耗时
+                  {t('table.upstreamDuration')}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  状态
+                  {t('table.status')}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  操作
+                  {t('common:actions.viewDetails')}
                 </th>
               </tr>
             </thead>
@@ -148,13 +150,13 @@ export function Logs() {
             {loading ? (
               <tr>
                 <td colSpan={11} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                  加载中...
+                  {t('common:actions.loading')}
                 </td>
               </tr>
             ) : logs.length === 0 ? (
               <tr>
                 <td colSpan={11} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                  暂无日志记录
+                  {t('common:empty.noRecords')}
                 </td>
               </tr>
             ) : (
@@ -190,7 +192,7 @@ export function Logs() {
                         </span>
                       </span>
                       {log.outputTokens === 0 && (
-                        <span className="text-yellow-500 dark:text-yellow-400" title="输出 tokens 为 0，可能存在异常">
+                        <span className="text-yellow-500 dark:text-yellow-400" title={t('warnings.zeroOutputTokens')}>
                           ⚠️
                         </span>
                       )}
@@ -221,7 +223,7 @@ export function Logs() {
                       onClick={() => setSelectedLog(log)}
                       className="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
                     >
-                      查看详情
+                      {t('common:actions.viewDetails')}
                     </button>
                   </td>
                 </tr>

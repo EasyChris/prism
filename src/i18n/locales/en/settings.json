@@ -1,0 +1,40 @@
+{
+  "title": "Settings",
+  "sections": {
+    "proxyService": "Proxy Service",
+    "appSettings": "Application Settings",
+    "dataManagement": "Data Management",
+    "about": "About"
+  },
+  "proxyService": {
+    "listenAddress": "Listen Address",
+    "listenPort": "Listen Port",
+    "serviceStatus": "Service Status",
+    "runningAt": "Running at {{addr}}",
+    "notRunning": "Not Running",
+    "startTime": "Start Time: {{date}}",
+    "saveConfig": "Save Configuration",
+    "savingAndRestarting": "Saving and Restarting..."
+  },
+  "appSettings": {
+    "autoStart": "Start on Boot",
+    "autoStartDesc": "Automatically run the application when the system starts",
+    "theme": "Theme",
+    "themeDesc": "Choose application theme"
+  },
+  "dataManagement": {
+    "exportConfig": "Export Configuration",
+    "importConfig": "Import Configuration",
+    "clearLogs": "Clear All Logs"
+  },
+  "about": {
+    "version": "Version:",
+    "description": "Prism Hub - Dynamic routing gateway designed for Claude Code",
+    "checkUpdate": "Check for Updates"
+  },
+  "messages": {
+    "loadConfigFailed": "Failed to load configuration",
+    "configSaved": "Configuration saved and service automatically restarted",
+    "saveConfigFailed": "Failed to save configuration"
+  }
+}

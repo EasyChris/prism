@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import * as api from "@/lib/api"
 import { ProfileSelector } from "@/components/ProfileSelector"
 import { SetupGuideModal } from "@/components/SetupGuideModal"
@@ -6,6 +7,7 @@ import { ProfileRanking } from "@/components/ProfileRanking"
 import { useRealtimeStats } from "@/hooks/useRealtimeStats"
 
 export function Dashboard() {
+  const { t } = useTranslation('dashboard')
   const [activeProfile, setActiveProfile] = useState<api.Profile | null>(null)
   const [allProfiles, setAllProfiles] = useState<api.Profile[]>([])
   const [profileCount, setProfileCount] = useState(0)
@@ -153,10 +155,10 @@ export function Dashboard() {
 
   // 时间范围标签映射
   const timeRangeLabels = {
-    hour: '小时',
-    day: '天',
-    week: '周',
-    month: '月'
+    hour: t('tokenUsage.timeRange.hour'),
+    day: t('tokenUsage.timeRange.day'),
+    week: t('tokenUsage.timeRange.week'),
+    month: t('tokenUsage.timeRange.month')
   }
 
   return (
@@ -167,7 +169,7 @@ export function Dashboard() {
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">总配置数</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t('stats.totalProfiles')}</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{profileCount}</p>
             </div>
             <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
@@ -182,9 +184,9 @@ export function Dashboard() {
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">服务状态</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t('stats.serviceStatus')}</p>
               <p className={`text-xl font-bold ${activeProfile ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
-                {activeProfile ? "运行中" : "未激活"}
+                {activeProfile ? t('common:status.running') : t('common:status.inactive')}
               </p>
             </div>
             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${activeProfile ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-gray-700'}`}>
@@ -199,7 +201,7 @@ export function Dashboard() {
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">今日请求</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t('stats.todayRequests')}</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatNumber(stats.todayRequests)}</p>
             </div>
             <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
@@ -214,7 +216,7 @@ export function Dashboard() {
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">今日 Token</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t('stats.todayTokens')}</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatNumber(stats.todayTokens)}</p>
             </div>
             <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
@@ -230,7 +232,7 @@ export function Dashboard() {
       <div className="grid grid-cols-2 gap-3">
         {/* 当前配置卡片 */}
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
-          <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-3">当前配置</h3>
+          <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-3">{t('currentProfile.title')}</h3>
           <ProfileSelector
             profiles={allProfiles}
             activeProfile={activeProfile}
@@ -242,7 +244,7 @@ export function Dashboard() {
         {/* API 密钥卡片 */}
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300">代理服务 API 密钥</h3>
+            <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t('apiKey.title')}</h3>
             <button
               onClick={() => setIsSetupGuideOpen(true)}
               className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
@@ -250,18 +252,18 @@ export function Dashboard() {
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              说明
+              {t('apiKey.description')}
             </button>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex-1 bg-gray-50 dark:bg-gray-700 rounded-lg px-3 py-2 font-mono text-xs text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 truncate">
-              {proxyApiKey || '点击刷新生成'}
+              {proxyApiKey || t('apiKey.placeholder')}
             </div>
             <button
               onClick={handleCopyApiKey}
               disabled={!proxyApiKey}
               className="p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:text-gray-400 dark:disabled:text-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
-              title="复制"
+              title={t('common:actions.copy')}
             >
               {copySuccess ? (
                 <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -276,7 +278,7 @@ export function Dashboard() {
             <button
               onClick={handleRefreshApiKey}
               className="p-2 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors"
-              title="刷新密钥"
+              title={t('apiKey.refreshTitle')}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -296,7 +298,7 @@ export function Dashboard() {
         {/* Right: Token Usage Chart */}
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Token 使用量</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{t('tokenUsage.title')}</h3>
             {/* Tab 切换 */}
             <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
             {(['hour', 'day', 'week', 'month'] as api.TimeRange[]).map((range) => (
@@ -319,11 +321,11 @@ export function Dashboard() {
         <div className="space-y-1.5">
           {isLoadingTokenData ? (
             <div className="flex items-center justify-center h-40">
-              <div className="text-gray-500 dark:text-gray-400 text-sm">加载中...</div>
+              <div className="text-gray-500 dark:text-gray-400 text-sm">{t('common:actions.loading')}</div>
             </div>
           ) : currentData.length === 0 ? (
             <div className="flex items-center justify-center h-40">
-              <div className="text-gray-400 dark:text-gray-500 text-sm">暂无数据</div>
+              <div className="text-gray-400 dark:text-gray-500 text-sm">{t('common:empty.noData')}</div>
             </div>
           ) : (
             <>
@@ -369,11 +371,11 @@ export function Dashboard() {
                         {/* Tooltip on hover */}
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
                           {data.label}<br/>
-                          总计: {data.tokens.toLocaleString()} tokens
+                          {t('tokenUsage.legend.regular')}: {data.tokens.toLocaleString()} tokens
                           {cacheTokens > 0 && (
                             <>
                               <br/>
-                              <span className="text-amber-400">缓存: {cacheTokens.toLocaleString()} tokens</span>
+                              <span className="text-amber-400">{t('tokenUsage.cacheTooltip', { count: cacheTokens.toLocaleString() })}</span>
                             </>
                           )}
                         </div>
@@ -415,20 +417,20 @@ export function Dashboard() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 bg-blue-500 rounded"></div>
-              <span className="text-gray-600 dark:text-gray-400">常规 Token</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('tokenUsage.legend.regular')}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 bg-amber-500 rounded"></div>
-              <span className="text-gray-600 dark:text-gray-400">缓存命中</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('tokenUsage.legend.cache')}</span>
             </div>
           </div>
           <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400">
             <div>
-              峰值: <span className="font-semibold text-gray-900 dark:text-white">{maxTokens.toLocaleString()}</span> tokens
+              {t('tokenUsage.peak')}: <span className="font-semibold text-gray-900 dark:text-white">{maxTokens.toLocaleString()}</span> tokens
             </div>
             {totalCacheHits > 0 && (
               <div>
-                缓存: <span className="font-semibold text-amber-600 dark:text-amber-400">{totalCacheHits.toLocaleString()}</span> tokens
+                {t('tokenUsage.cache')}: <span className="font-semibold text-amber-600 dark:text-amber-400">{totalCacheHits.toLocaleString()}</span> tokens
               </div>
             )}
           </div>

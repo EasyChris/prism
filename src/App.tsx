@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { ThemeProvider } from './contexts/ThemeContext'
+import { LanguageProvider } from './contexts/LanguageContext'
 import { Layout } from './components/Layout'
 import { Dashboard } from './pages/Dashboard'
 import { Profiles } from './pages/Profiles'
@@ -38,9 +39,11 @@ function App() {
 
   return (
     <ThemeProvider>
-      <Layout activeTab={activeTab} onTabChange={setActiveTab}>
-        {renderContent()}
-      </Layout>
+      <LanguageProvider>
+        <Layout activeTab={activeTab} onTabChange={setActiveTab}>
+          {renderContent()}
+        </Layout>
+      </LanguageProvider>
     </ThemeProvider>
   )
 }

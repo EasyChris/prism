@@ -1,0 +1,40 @@
+{
+  "title": "Dashboard",
+  "stats": {
+    "totalProfiles": "Total Profiles",
+    "serviceStatus": "Service Status",
+    "todayRequests": "Today's Requests",
+    "todayTokens": "Today's Tokens"
+  },
+  "currentProfile": {
+    "title": "Current Profile",
+    "noProfile": "No profile selected"
+  },
+  "apiKey": {
+    "title": "Proxy Service API Key",
+    "description": "Instructions",
+    "placeholder": "Click refresh to generate",
+    "refreshTitle": "Refresh Key"
+  },
+  "tokenUsage": {
+    "title": "Token Usage",
+    "timeRange": {
+      "hour": "Hour",
+      "day": "Day",
+      "week": "Week",
+      "month": "Month"
+    },
+    "legend": {
+      "regular": "Regular Tokens",
+      "cache": "Cache Hit"
+    },
+    "peak": "Peak",
+    "cache": "Cache",
+    "cacheTooltip": "Cache: {{count}} tokens"
+  },
+  "ranking": {
+    "title": "Profile Usage Ranking",
+    "noData": "No usage data",
+    "startUsing": "Rankings will appear after you start using profiles"
+  }
+}
