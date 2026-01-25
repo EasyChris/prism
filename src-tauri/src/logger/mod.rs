@@ -138,14 +138,26 @@ fn extract_provider(api_base_url: &str) -> String {
 
 // 保存日志到数据库并发送事件
 pub async fn save_log(log: RequestLog, app_handle: Option<&tauri::AppHandle>) {
-    if let Err(e) = crate::db::save_log_to_db(&log).await {
-        log::error!("Failed to save log to database: {}", e);
-    }
+    let is_new = match crate::db::save_log_to_db(&log).await {
+        Ok(is_new) => is_new,
+        Err(e) => {
+            log::error!("Failed to save log to database: {}", e);
+            return;
+        }
+    };
 
-    // 发送新日志事件到前端
+    // 根据是否是新记录发送不同的事件
     if let Some(app) = app_handle {
-        if let Err(e) = app.emit("new-log", &log) {
-            log::error!("Failed to emit new-log event: {}", e);
+        if is_new {
+            // 新记录，发送 new-log 事件
+            if let Err(e) = app.emit("new-log", &log) {
+                log::error!("Failed to emit new-log event: {}", e);
+            }
+        } else {
+            // 更新现有记录，发送 log-updated 事件
+            if let Err(e) = app.emit("log-updated", &log) {
+                log::error!("Failed to emit log-updated event: {}", e);
+            }
         }
         // 移除统计数据查询，改为由前端定时刷新或在 Dashboard 页面主动查询
     }

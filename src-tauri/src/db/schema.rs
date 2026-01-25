@@ -25,7 +25,7 @@ pub async fn init_database() -> Result<(), String> {
         r#"
         CREATE TABLE IF NOT EXISTS request_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            request_id TEXT,
+            request_id TEXT NOT NULL UNIQUE,
             timestamp INTEGER NOT NULL,
 
             -- Profile 信息
@@ -81,6 +81,85 @@ pub async fn init_database() -> Result<(), String> {
         )
         .map_err(|e| format!("Failed to add response_body column: {}", e))?;
         log::info!("Successfully added response_body column");
+    }
+
+    // 迁移：为 request_id 添加 UNIQUE 约束（如果不存在）
+    // 检查是否已经有 UNIQUE 约束
+    let has_unique_constraint: bool = conn
+        .query_row(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='sqlite_autoindex_request_logs_1'",
+            [],
+            |row| row.get::<_, i32>(0).map(|count| count > 0),
+        )
+        .unwrap_or(false);
+
+    if !has_unique_constraint {
+        log::info!("Adding UNIQUE constraint to request_id and cleaning up duplicates");
+
+        // 先清理重复记录，保留每个 request_id 的第一条记录
+        conn.execute(
+            r#"
+            DELETE FROM request_logs
+            WHERE id NOT IN (
+                SELECT MIN(id)
+                FROM request_logs
+                GROUP BY request_id
+            )
+            "#,
+            [],
+        )
+        .map_err(|e| format!("Failed to clean up duplicate records: {}", e))?;
+
+        // 创建新表结构（带 UNIQUE 约束）
+        conn.execute(
+            r#"
+            CREATE TABLE request_logs_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                request_id TEXT NOT NULL UNIQUE,
+                timestamp INTEGER NOT NULL,
+                profile_id TEXT NOT NULL,
+                profile_name TEXT NOT NULL,
+                provider TEXT NOT NULL,
+                original_model TEXT NOT NULL,
+                model_mode TEXT NOT NULL,
+                forwarded_model TEXT NOT NULL,
+                input_tokens INTEGER NOT NULL,
+                output_tokens INTEGER NOT NULL,
+                cache_creation_input_tokens INTEGER NOT NULL DEFAULT 0,
+                cache_read_input_tokens INTEGER NOT NULL DEFAULT 0,
+                duration_ms INTEGER NOT NULL,
+                upstream_duration_ms INTEGER,
+                status_code INTEGER NOT NULL,
+                error_message TEXT,
+                is_stream INTEGER NOT NULL,
+                request_size_bytes INTEGER,
+                response_size_bytes INTEGER,
+                response_body TEXT
+            )
+            "#,
+            [],
+        )
+        .map_err(|e| format!("Failed to create new table: {}", e))?;
+
+        // 复制数据到新表
+        conn.execute(
+            r#"
+            INSERT INTO request_logs_new
+            SELECT * FROM request_logs
+            "#,
+            [],
+        )
+        .map_err(|e| format!("Failed to copy data to new table: {}", e))?;
+
+        // 删除旧表
+        conn.execute("DROP TABLE request_logs", [])
+            .map_err(|e| format!("Failed to drop old table: {}", e))?;
+
+        // 重命名新表
+        conn.execute("ALTER TABLE request_logs_new RENAME TO request_logs", [])
+            .map_err(|e| format!("Failed to rename new table: {}", e))?;
+
+        log::info!("Successfully added UNIQUE constraint and cleaned up duplicates");
     }
 
     // 创建索引以提高查询性能

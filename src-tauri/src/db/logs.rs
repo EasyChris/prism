@@ -4,17 +4,27 @@ use crate::logger::RequestLog;
 use super::schema::get_db_path;
 
 /// 保存日志到数据库
-pub async fn save_log_to_db(log: &RequestLog) -> Result<(), String> {
+/// 返回 true 表示新插入的记录，false 表示更新了现有记录
+pub async fn save_log_to_db(log: &RequestLog) -> Result<bool, String> {
     let db_path = get_db_path();
     let log = log.clone(); // 克隆 log 以避免生命周期问题
 
-    tokio::task::spawn_blocking(move || {
+    let is_new = tokio::task::spawn_blocking(move || {
         let conn = rusqlite::Connection::open(&db_path)
             .map_err(|e| format!("Failed to open database: {}", e))?;
 
+        // 先检查记录是否已存在
+        let exists: bool = conn
+            .query_row(
+                "SELECT COUNT(*) FROM request_logs WHERE request_id = ?1",
+                [&log.request_id],
+                |row| row.get::<_, i32>(0).map(|count| count > 0),
+            )
+            .unwrap_or(false);
+
         conn.execute(
             r#"
-            INSERT INTO request_logs (
+            INSERT OR REPLACE INTO request_logs (
                 request_id, timestamp, profile_id, profile_name, provider,
                 original_model, model_mode, forwarded_model,
                 input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens,
@@ -48,12 +58,13 @@ pub async fn save_log_to_db(log: &RequestLog) -> Result<(), String> {
         )
         .map_err(|e| format!("Failed to insert log: {}", e))?;
 
-        Ok::<(), String>(())
+        // 返回是否是新记录（!exists 表示之前不存在，现在是新插入的）
+        Ok::<bool, String>(!exists)
     })
     .await
     .map_err(|e| format!("Task join error: {}", e))??;
 
-    Ok(())
+    Ok(is_new)
 }
 
 /// 更新日志到数据库（用于流式响应的 Token 统计更新）
