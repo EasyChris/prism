@@ -30,6 +30,18 @@ pub fn run() {
           log::info!("Database initialized successfully");
         }
 
+        // 去重日志记录（清理历史重复数据）
+        match db::deduplicate_logs().await {
+          Ok(count) => {
+            if count > 0 {
+              log::info!("Deduplicated {} duplicate log records", count);
+            }
+          }
+          Err(e) => {
+            log::warn!("Failed to deduplicate logs: {}", e);
+          }
+        }
+
         // 清理超过30天的旧日志
         match db::cleanup_old_logs(30).await {
           Ok(count) => {

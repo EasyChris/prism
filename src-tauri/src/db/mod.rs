@@ -7,7 +7,7 @@ mod config;
 
 // 重新导出公共 API
 pub use schema::{get_db_path, init_database};
-pub use logs::{save_log_to_db, update_log_to_db, get_logs_from_db, cleanup_old_logs};
+pub use logs::{save_log_to_db, update_log_to_db, get_logs_from_db, cleanup_old_logs, deduplicate_logs};
 pub use stats::{
     DashboardStats, TokenDataPoint, ProfileConsumption,
     get_dashboard_stats, get_token_stats, get_profile_consumption_ranking

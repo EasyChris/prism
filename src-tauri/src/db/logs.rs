@@ -24,7 +24,7 @@ pub async fn save_log_to_db(log: &RequestLog) -> Result<bool, String> {
 
         conn.execute(
             r#"
-            INSERT OR REPLACE INTO request_logs (
+            INSERT OR IGNORE INTO request_logs (
                 request_id, timestamp, profile_id, profile_name, provider,
                 original_model, model_mode, forwarded_model,
                 input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens,
@@ -213,6 +213,44 @@ pub async fn cleanup_old_logs(retention_days: i64) -> Result<usize, String> {
         .map_err(|e| format!("Failed to delete old logs: {}", e))?;
 
         log::info!("Cleaned up {} old logs (retention: {} days)", deleted, retention_days);
+
+        Ok::<usize, String>(deleted)
+    })
+    .await
+    .map_err(|e| format!("Task join error: {}", e))??;
+
+    Ok(deleted_count)
+}
+
+/// 去重日志记录
+/// 删除重复的 request_id 记录，保留最新的记录（按 id 降序）
+///
+/// # Returns
+/// * `Ok(usize)` - 删除的重复日志条数
+pub async fn deduplicate_logs() -> Result<usize, String> {
+    let db_path = get_db_path();
+
+    let deleted_count = tokio::task::spawn_blocking(move || {
+        let conn = rusqlite::Connection::open(&db_path)
+            .map_err(|e| format!("Failed to open database: {}", e))?;
+
+        // 删除重复记录，保留每个 request_id 的最新记录（id 最大的）
+        let deleted = conn.execute(
+            r#"
+            DELETE FROM request_logs
+            WHERE id NOT IN (
+                SELECT MAX(id)
+                FROM request_logs
+                GROUP BY request_id
+            )
+            "#,
+            [],
+        )
+        .map_err(|e| format!("Failed to deduplicate logs: {}", e))?;
+
+        if deleted > 0 {
+            log::info!("Deduplicated {} duplicate log records", deleted);
+        }
 
         Ok::<usize, String>(deleted)
     })
