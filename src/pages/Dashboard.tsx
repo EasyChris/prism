@@ -33,7 +33,11 @@ export function Dashboard() {
   })
 
   // 格式化数字显示（K/M 单位）
-  const formatNumber = (num: number): string => {
+  const formatNumber = (num: number | undefined): string => {
+    // 处理 undefined 或 null 的情况
+    if (num === undefined || num === null || isNaN(num)) {
+      return '0'
+    }
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'M'
     }

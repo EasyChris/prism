@@ -2,6 +2,7 @@
 
 /// 统计数据结构
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DashboardStats {
     pub today_requests: i32,
     pub today_tokens: i32,
