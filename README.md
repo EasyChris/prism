@@ -73,6 +73,8 @@ Prism Hub 是一个专为 Claude Code 设计的本地代理工具，解决多 AP
 2. 下载最新版本的 `.dmg` 文件
 3. 双击安装，拖拽到 Applications 文件夹
 4. 首次打开可能需要在"系统偏好设置 > 安全性与隐私"中允许运行
+5. 或者运行
+ `sudo xattr -rd com.apple.quarantine "/Applications/Prism Hub.app/"`
 
 #### 方式二：从源码构建
 
