@@ -1,18 +1,22 @@
-import { useEffect, useCallback } from 'react'
-import { listen, UnlistenFn } from '@tauri-apps/api/event'
-import { DashboardStats } from '../lib/api'
+import { useEffect, useRef } from 'react'
+import { getDashboardStats, DashboardStats } from '../lib/api'
 
 interface UseRealtimeStatsOptions {
   onStatsUpdate?: (stats: DashboardStats) => void
   enabled?: boolean
+  refreshInterval?: number // 刷新间隔（毫秒），默认 5000ms
 }
 
 /**
- * Hook for listening to real-time statistics updates from Tauri backend
+ * Hook for periodically fetching and updating dashboard statistics
+ *
+ * 由于移除了后端的自动统计推送（避免频繁数据库查询），
+ * 改为前端定时主动查询统计数据
  *
  * @param options - Configuration options
  * @param options.onStatsUpdate - Callback when statistics are updated
- * @param options.enabled - Whether to enable event listening (default: true)
+ * @param options.enabled - Whether to enable periodic updates (default: true)
+ * @param options.refreshInterval - Refresh interval in milliseconds (default: 5000)
  *
  * @example
  * ```tsx
@@ -21,16 +25,20 @@ interface UseRealtimeStatsOptions {
  * useRealtimeStats({
  *   onStatsUpdate: (newStats) => {
  *     setStats(newStats)
- *   }
+ *   },
+ *   refreshInterval: 5000 // 每 5 秒刷新一次
  * })
  * ```
  */
 export function useRealtimeStats(options: UseRealtimeStatsOptions = {}) {
-  const { onStatsUpdate, enabled = true } = options
+  const { onStatsUpdate, enabled = true, refreshInterval = 5000 } = options
 
-  const handleStatsUpdate = useCallback((stats: DashboardStats) => {
-    console.log('[useRealtimeStats] Stats updated:', stats)
-    onStatsUpdate?.(stats)
+  // 使用 ref 存储回调函数，避免因回调变化导致重新设置定时器
+  const onStatsUpdateRef = useRef(onStatsUpdate)
+
+  // 更新 ref 中的回调函数
+  useEffect(() => {
+    onStatsUpdateRef.current = onStatsUpdate
   }, [onStatsUpdate])
 
   useEffect(() => {
@@ -38,28 +46,27 @@ export function useRealtimeStats(options: UseRealtimeStatsOptions = {}) {
       return
     }
 
-    let unlisten: UnlistenFn | undefined
-
-    // Listen to stats-update events
-    const setupListener = async () => {
+    // 立即执行一次查询
+    const fetchStats = async () => {
       try {
-        unlisten = await listen<DashboardStats>('stats-update', (event) => {
-          handleStatsUpdate(event.payload)
-        })
-        console.log('[useRealtimeStats] Listening to stats-update events')
+        const stats = await getDashboardStats()
+        onStatsUpdateRef.current?.(stats)
       } catch (error) {
-        console.error('[useRealtimeStats] Failed to setup stats-update listener:', error)
+        console.error('[useRealtimeStats] Failed to fetch stats:', error)
       }
     }
 
-    setupListener()
+    fetchStats()
 
-    // Cleanup listener on unmount
+    // 设置定时器定期查询
+    const intervalId = setInterval(fetchStats, refreshInterval)
+
+    console.log(`[useRealtimeStats] Started polling stats every ${refreshInterval}ms`)
+
+    // Cleanup
     return () => {
-      if (unlisten) {
-        unlisten()
-        console.log('[useRealtimeStats] Unlistened from stats-update events')
-      }
+      clearInterval(intervalId)
+      console.log('[useRealtimeStats] Stopped polling stats')
     }
-  }, [enabled, handleStatsUpdate])
+  }, [enabled, refreshInterval]) // 只依赖 enabled 和 refreshInterval
 }

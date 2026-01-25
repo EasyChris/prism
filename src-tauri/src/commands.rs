@@ -227,7 +227,11 @@ pub async fn get_logs(
     let limit = limit.unwrap_or(100).min(100) as usize;
     let offset = offset.unwrap_or(0) as usize;
 
+    log::debug!("Getting logs with limit={}, offset={}", limit, offset);
+
     let logs = crate::logger::get_logs(limit, offset).await;
+
+    log::debug!("Retrieved {} logs from database", logs.len());
 
     Ok(logs.into_iter().map(RequestLogDto::from).collect())
 }

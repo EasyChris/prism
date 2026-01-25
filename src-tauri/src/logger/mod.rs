@@ -43,6 +43,7 @@ impl ModelMode {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RequestLog {
     // 请求标识
     pub request_id: String,
@@ -146,14 +147,7 @@ pub async fn save_log(log: RequestLog, app_handle: Option<&tauri::AppHandle>) {
         if let Err(e) = app.emit("new-log", &log) {
             log::error!("Failed to emit new-log event: {}", e);
         }
-
-        // 发送统计数据更新事件（批量更新，避免过于频繁）
-        // 获取最新的统计数据并发送
-        if let Ok(stats) = crate::db::get_dashboard_stats().await {
-            if let Err(e) = app.emit("stats-update", &stats) {
-                log::error!("Failed to emit stats-update event: {}", e);
-            }
-        }
+        // 移除统计数据查询，改为由前端定时刷新或在 Dashboard 页面主动查询
     }
 }
 
@@ -168,13 +162,7 @@ pub async fn update_log(log: RequestLog, app_handle: Option<&tauri::AppHandle>) 
         if let Err(e) = app.emit("log-updated", &log) {
             log::error!("Failed to emit log-updated event: {}", e);
         }
-
-        // 发送统计数据更新事件
-        if let Ok(stats) = crate::db::get_dashboard_stats().await {
-            if let Err(e) = app.emit("stats-update", &stats) {
-                log::error!("Failed to emit stats-update event: {}", e);
-            }
-        }
+        // 移除统计数据查询，改为由前端定时刷新或在 Dashboard 页面主动查询
     }
 }
 

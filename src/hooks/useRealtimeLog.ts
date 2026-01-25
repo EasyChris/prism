@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 import { listen, UnlistenFn } from '@tauri-apps/api/event'
 import { RequestLog } from '../lib/api'
 
@@ -33,14 +33,17 @@ interface UseRealtimeLogOptions {
 export function useRealtimeLog(options: UseRealtimeLogOptions = {}) {
   const { onNewLog, onLogUpdated, enabled = true } = options
 
-  const handleNewLog = useCallback((log: RequestLog) => {
-    console.log('[useRealtimeLog] New log received:', log.requestId)
-    onNewLog?.(log)
+  // 使用 ref 存储回调函数，避免因回调变化导致重新订阅
+  const onNewLogRef = useRef(onNewLog)
+  const onLogUpdatedRef = useRef(onLogUpdated)
+
+  // 更新 ref 中的回调函数
+  useEffect(() => {
+    onNewLogRef.current = onNewLog
   }, [onNewLog])
 
-  const handleLogUpdated = useCallback((log: RequestLog) => {
-    console.log('[useRealtimeLog] Log updated:', log.requestId)
-    onLogUpdated?.(log)
+  useEffect(() => {
+    onLogUpdatedRef.current = onLogUpdated
   }, [onLogUpdated])
 
   useEffect(() => {
@@ -55,7 +58,8 @@ export function useRealtimeLog(options: UseRealtimeLogOptions = {}) {
     const setupNewLogListener = async () => {
       try {
         unlistenNewLog = await listen<RequestLog>('new-log', (event) => {
-          handleNewLog(event.payload)
+          // 使用 ref 中的最新回调，避免闭包问题
+          onNewLogRef.current?.(event.payload)
         })
         console.log('[useRealtimeLog] Listening to new-log events')
       } catch (error) {
@@ -67,7 +71,8 @@ export function useRealtimeLog(options: UseRealtimeLogOptions = {}) {
     const setupLogUpdatedListener = async () => {
       try {
         unlistenLogUpdated = await listen<RequestLog>('log-updated', (event) => {
-          handleLogUpdated(event.payload)
+          // 使用 ref 中的最新回调，避免闭包问题
+          onLogUpdatedRef.current?.(event.payload)
         })
         console.log('[useRealtimeLog] Listening to log-updated events')
       } catch (error) {
@@ -89,5 +94,5 @@ export function useRealtimeLog(options: UseRealtimeLogOptions = {}) {
         console.log('[useRealtimeLog] Unlistened from log-updated events')
       }
     }
-  }, [enabled, handleNewLog, handleLogUpdated])
+  }, [enabled]) // 只依赖 enabled，避免因回调变化导致重新订阅
 }

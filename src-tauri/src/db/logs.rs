@@ -100,6 +100,8 @@ pub async fn update_log_to_db(log: &RequestLog) -> Result<(), String> {
 pub async fn get_logs_from_db(limit: usize, offset: usize) -> Result<Vec<RequestLog>, String> {
     let db_path = get_db_path();
 
+    log::debug!("Querying logs from database: limit={}, offset={}", limit, offset);
+
     let logs = tokio::task::spawn_blocking(move || {
         let conn = rusqlite::Connection::open(&db_path)
             .map_err(|e| format!("Failed to open database: {}", e))?;
@@ -126,6 +128,19 @@ pub async fn get_logs_from_db(limit: usize, offset: usize) -> Result<Vec<Request
 
         let logs = stmt
             .query_map([limit as i64, offset as i64], |row| {
+                // 使用 unwrap_or 提供默认值，防止 NULL 值导致的错误
+                let input_tokens: i32 = row.get(8).unwrap_or(0);
+                let output_tokens: i32 = row.get(9).unwrap_or(0);
+                let cache_creation: i32 = row.get(10).unwrap_or(0);
+                let cache_read: i32 = row.get(11).unwrap_or(0);
+                let duration: i64 = row.get(12).unwrap_or(0);
+                let status: i32 = row.get(14).unwrap_or(0);
+
+                log::trace!(
+                    "Parsed log: tokens=({}/{}), cache=({}/{}), duration={}, status={}",
+                    input_tokens, output_tokens, cache_creation, cache_read, duration, status
+                );
+
                 Ok(RequestLog {
                     request_id: row.get(0)?,
                     timestamp: row.get(1)?,
@@ -135,18 +150,18 @@ pub async fn get_logs_from_db(limit: usize, offset: usize) -> Result<Vec<Request
                     original_model: row.get(5)?,
                     model_mode: row.get(6)?,
                     forwarded_model: row.get(7)?,
-                    input_tokens: row.get(8)?,
-                    output_tokens: row.get(9)?,
-                    cache_creation_input_tokens: row.get(10)?,
-                    cache_read_input_tokens: row.get(11)?,
-                    duration_ms: row.get(12)?,
-                    upstream_duration_ms: row.get(13)?,
-                    status_code: row.get(14)?,
-                    error_message: row.get(15)?,
-                    is_stream: row.get::<_, i32>(16)? != 0,
-                    request_size_bytes: row.get(17)?,
-                    response_size_bytes: row.get(18)?,
-                    response_body: row.get(19)?,
+                    input_tokens,
+                    output_tokens,
+                    cache_creation_input_tokens: cache_creation,
+                    cache_read_input_tokens: cache_read,
+                    duration_ms: duration,
+                    upstream_duration_ms: row.get(13).ok(),
+                    status_code: status,
+                    error_message: row.get(15).ok(),
+                    is_stream: row.get::<_, i32>(16).unwrap_or(0) != 0,
+                    request_size_bytes: row.get(17).ok(),
+                    response_size_bytes: row.get(18).ok(),
+                    response_body: row.get(19).ok(),
                 })
             })
             .map_err(|e| format!("Failed to query logs: {}", e))?

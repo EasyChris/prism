@@ -22,22 +22,43 @@ export function Logs() {
   useRealtimeLog({
     enabled: realtimeEnabled,
     onNewLog: (log) => {
-      setLogs((prev) => [log, ...prev].slice(0, MAX_LOGS))
+      // 确保数据有效性
+      const validLog = validateLog(log)
+      setLogs((prev) => [validLog, ...prev].slice(0, MAX_LOGS))
     },
     onLogUpdated: (log) => {
+      // 确保数据有效性
+      const validLog = validateLog(log)
       setLogs((prev) =>
-        prev.map((l) => (l.requestId === log.requestId ? log : l))
+        prev.map((l) => (l.requestId === validLog.requestId ? validLog : l))
       )
     },
   })
+
+  // 验证并修复日志数据
+  const validateLog = (log: RequestLog): RequestLog => {
+    return {
+      ...log,
+      inputTokens: log.inputTokens || 0,
+      outputTokens: log.outputTokens || 0,
+      durationMs: log.durationMs || 0,
+      statusCode: log.statusCode || 0,
+      requestSizeBytes: log.requestSizeBytes || 0,
+      responseSizeBytes: log.responseSizeBytes || 0,
+    }
+  }
 
   const loadLogs = async () => {
     try {
       setLoading(true)
       const data = await getLogs(100, 0)
-      setLogs(data)
+
+      // 验证所有日志数据
+      const validatedLogs = data.map(validateLog)
+
+      setLogs(validatedLogs)
     } catch (error) {
-      console.error("Failed to load logs:", error)
+      console.error("[Logs] Failed to load logs:", error)
     } finally {
       setLoading(false)
     }
