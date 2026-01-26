@@ -97,13 +97,13 @@ pnpm tauri build
 
 **只需配置一次，之后无需修改任何环境变量**
 
-1. 启动 Claude Code Proxy Hub，默认监听 `http://localhost:3000`
+1. 启动 Claude Code Proxy Hub，默认监听 `http://localhost:15288`
 
 2. 配置 Claude Code 使用本地代理：
 
 ```bash
 # 在 ~/.zshrc 或 ~/.bashrc 中添加（只需一次）
-export ANTHROPIC_API_URL=http://localhost:3000
+export ANTHROPIC_API_URL=http://localhost:15288
 export ANTHROPIC_API_KEY=placeholder  # 占位符，实际 Key 在 Proxy Hub 中配置
 ```
 

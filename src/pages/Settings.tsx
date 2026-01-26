@@ -5,7 +5,7 @@ import { UpdateDialog } from "../components/UpdateDialog"
 
 export function Settings() {
   const { t } = useTranslation('settings')
-  const [proxyConfig, setProxyConfigState] = useState<ProxyConfig>({ host: "127.0.0.1", port: 3000 })
+  const [proxyConfig, setProxyConfigState] = useState<ProxyConfig>({ host: "127.0.0.1", port: 15288 })
   const [proxyStatus, setProxyStatus] = useState<ProxyServerStatus | null>(null)
   const [appVersion, setAppVersion] = useState<string>("0.1.0")
   const [loading, setLoading] = useState(true)
@@ -111,9 +111,9 @@ export function Settings() {
                     <input
                       type="number"
                       value={proxyConfig.port}
-                      onChange={(e) => setProxyConfigState({ ...proxyConfig, port: parseInt(e.target.value) || 3000 })}
+                      onChange={(e) => setProxyConfigState({ ...proxyConfig, port: parseInt(e.target.value) || 15288 })}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="3000"
+                      placeholder="15288"
                     />
                   </div>
                 </div>

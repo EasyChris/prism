@@ -10,7 +10,7 @@ use std::str::FromStr;
 pub struct ProxyConfig {
     /// 监听地址（默认：127.0.0.1）
     pub host: String,
-    /// 监听端口（默认：3000）
+    /// 监听端口（默认：15288）
     pub port: u16,
 }
 
@@ -18,7 +18,7 @@ impl Default for ProxyConfig {
     fn default() -> Self {
         Self {
             host: "127.0.0.1".to_string(),
-            port: 3000,
+            port: 15288,
         }
     }
 }
@@ -93,7 +93,7 @@ mod tests {
     fn test_default_config() {
         let config = ProxyConfig::default();
         assert_eq!(config.host, "127.0.0.1");
-        assert_eq!(config.port, 3000);
+        assert_eq!(config.port, 15288);
         assert!(config.validate().is_ok());
     }
 
@@ -101,7 +101,7 @@ mod tests {
     fn test_config_validation() {
         let config = ProxyConfig {
             host: "invalid.ip.address".to_string(),
-            port: 3000,
+            port: 15288,
         };
         assert!(config.validate().is_err());
 

@@ -17,7 +17,7 @@ export function SetupGuideModal({ isOpen, onClose, proxyApiKey, proxyServerUrl }
   const configExample = `{
   "env": {
     "ANTHROPIC_AUTH_TOKEN": "${proxyApiKey || 'your-proxy-api-key'}",
-    "ANTHROPIC_BASE_URL": "${proxyServerUrl || 'http://127.0.0.1:3000'}",
+    "ANTHROPIC_BASE_URL": "${proxyServerUrl || 'http://127.0.0.1:15288'}",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": 1
   },
   "permissions": {
@@ -31,7 +31,7 @@ export function SetupGuideModal({ isOpen, onClose, proxyApiKey, proxyServerUrl }
 {
   "env": {
     "ANTHROPIC_AUTH_TOKEN": "${proxyApiKey || 'your-proxy-api-key'}",
-    "ANTHROPIC_BASE_URL": "${proxyServerUrl || 'http://127.0.0.1:3000'}",
+    "ANTHROPIC_BASE_URL": "${proxyServerUrl || 'http://127.0.0.1:15288'}",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": 1
   },
   "permissions": {
@@ -48,7 +48,7 @@ New-Item -ItemType Directory -Force -Path (Split-Path $settingsPath)
 {
   "env": {
     "ANTHROPIC_AUTH_TOKEN": "${proxyApiKey || 'your-proxy-api-key'}",
-    "ANTHROPIC_BASE_URL": "${proxyServerUrl || 'http://127.0.0.1:3000'}",
+    "ANTHROPIC_BASE_URL": "${proxyServerUrl || 'http://127.0.0.1:15288'}",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": 1
   },
   "permissions": {
