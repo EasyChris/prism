@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Prism Hub",
+  "productName": "Prism",
   "version": "0.2.9",
   "identifier": "com.prismhub.app",
   "build": {
